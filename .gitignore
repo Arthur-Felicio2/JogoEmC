@@ -1,0 +1,7 @@
+build/
+.vscode/
+save/*.dat
+*.exe
+*.obj
+*.pdb
+*.ilk
