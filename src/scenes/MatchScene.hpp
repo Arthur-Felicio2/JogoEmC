@@ -5,6 +5,8 @@
 #include "render/ScoreBoard.hpp"
 #include "fx/ParticleSystem.hpp"
 #include "fx/Timeline.hpp"
+#include "core/GameSession.hpp"
+#include "save/ScoreStore.h"
 #include <memory>
 #include <vector>
 
@@ -20,12 +22,16 @@ enum class MatchPhase {
 class MatchScene : public Scene {
 public:
     explicit MatchScene(std::shared_ptr<Match> match);
+    MatchScene(const sl::GameSessionContext& context, sl::ScoreStore& store);
+    explicit MatchScene(const sl::GameSessionContext& context);
 
     void onEnter() override;
     void update(float dt) override;
     void draw() override;
 
     void setPlayer1Move(int move);
+    void setSessionContext(const sl::GameSessionContext& ctx) { m_context = ctx; }
+    const sl::GameSessionContext& sessionContext() const { return m_context; }
 
 private:
     void setupTurnUI();
@@ -34,6 +40,7 @@ private:
     void finishRound();
 
     std::shared_ptr<Match> m_match;
+    sl::GameSessionContext m_context;
     MatchPhase m_phase = MatchPhase::PlayerAChoice;
 
     int m_moveA = 0;

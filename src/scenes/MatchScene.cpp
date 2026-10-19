@@ -10,6 +10,8 @@
 #include "fx/Easing.hpp"
 #include "games/RpsRules.hpp"
 #include "games/OddEvenRules.hpp"
+#include "games/HumanPlayer.hpp"
+#include "games/CpuPlayer.hpp"
 #include <cmath>
 #include <algorithm>
 
@@ -20,6 +22,15 @@ MatchScene::MatchScene(std::shared_ptr<Match> match)
       m_btnMenu("Menu", Rectangle{30, 24, 100, 44}, ButtonStyle::Secondary),
       m_btnReadyToPlay("Estou Pronto!", Rectangle{490, 480, 300, 56}, ButtonStyle::Primary) {
 
+    if (m_match) {
+        m_context.player1Name = m_match->playerA()->name();
+        m_context.player2Name = m_match->playerB()->name();
+        m_context.skinP1 = m_match->playerA()->skinTone();
+        m_context.skinP2 = m_match->playerB()->skinTone();
+        m_context.mode = m_match->playerB()->isHuman() ? sl::GameMode::TwoPlayers : sl::GameMode::SinglePlayer;
+        m_context.gameId = (m_match->rules()->ruleName() == "Par ou Ímpar") ? sl::GameId::OddEven : sl::GameId::Rps;
+    }
+
     m_btnMenu.setOnClick([this]() {
         if (m_manager) {
             m_manager->changeScene(std::make_unique<MenuScene>());
@@ -28,6 +39,40 @@ MatchScene::MatchScene(std::shared_ptr<Match> match)
 
     setupTurnUI();
 }
+
+MatchScene::MatchScene(const sl::GameSessionContext& context, sl::ScoreStore& store)
+    : m_context(context),
+      m_btnMenu("Menu", Rectangle{30, 24, 100, 44}, ButtonStyle::Secondary),
+      m_btnReadyToPlay("Estou Pronto!", Rectangle{490, 480, 300, 56}, ButtonStyle::Primary) {
+
+    auto p1 = std::make_shared<HumanPlayer>(m_context.player1Name, m_context.skinP1);
+    std::shared_ptr<IPlayer> p2;
+    if (m_context.mode == sl::GameMode::TwoPlayers) {
+        p2 = std::make_shared<HumanPlayer>(m_context.player2Name, m_context.skinP2);
+    } else {
+        p2 = std::make_shared<CpuPlayer>("Computador", m_context.skinP2);
+    }
+
+    std::shared_ptr<IGameRules> rules;
+    if (m_context.gameId == sl::GameId::OddEven) {
+        rules = std::make_shared<OddEvenRules>(m_context.p1IsEven);
+    } else {
+        rules = std::make_shared<RpsRules>();
+    }
+
+    m_match = std::make_shared<Match>(p1, p2, rules, 2);
+
+    m_btnMenu.setOnClick([this]() {
+        if (m_manager) {
+            m_manager->changeScene(std::make_unique<MenuScene>());
+        }
+    });
+
+    setupTurnUI();
+}
+
+MatchScene::MatchScene(const sl::GameSessionContext& context)
+    : MatchScene(context, Application::instance().scoreStore()) {}
 
 void MatchScene::onEnter() {
     m_scoreBoard.setPlayerA(m_match->playerA()->name(), m_match->scoreA(), Theme::getSkinColor(m_match->playerA()->skinTone()));
@@ -47,7 +92,7 @@ void MatchScene::chooseMove(int moveIndex) {
         if (m_match->playerB()->isHuman()) {
             // 2-player local: switch to PassDeviceScene to conceal move!
             if (m_manager) {
-                m_manager->changeScene(std::make_unique<PassDeviceScene>(m_match, m_moveA), 0.2f);
+                m_manager->changeScene(std::make_unique<PassDeviceScene>(m_match, m_moveA, m_context), 0.2f);
             }
         } else {
             // 1-player vs CPU: CPU chooses immediately
@@ -60,6 +105,7 @@ void MatchScene::chooseMove(int moveIndex) {
         startReveal(m_moveA, m_moveB);
     }
 }
+
 
 void MatchScene::setupTurnUI() {
     m_moveButtons.clear();
@@ -112,6 +158,13 @@ void MatchScene::startReveal(int moveA, int moveB) {
 void MatchScene::update(float dt) {
     m_btnMenu.update(dt);
     m_particles.update(dt);
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        if (m_manager) {
+            m_manager->changeScene(std::make_unique<MenuScene>());
+        }
+        return;
+    }
 
     if (m_phase == MatchPhase::PlayerAChoice || m_phase == MatchPhase::PlayerBChoice) {
         int numMoves = m_match->rules()->moveCount();
@@ -224,8 +277,19 @@ void MatchScene::update(float dt) {
 
 void MatchScene::finishRound() {
     if (m_match->isOver()) {
+        std::string winnerName = (m_match->winner() == 0) ? m_match->playerA()->name() : m_match->playerB()->name();
+        auto resultScene = std::make_unique<ResultScene>(
+            m_context,
+            winnerName,
+            m_match->scoreA(),
+            m_match->scoreB(),
+            Application::instance().scoreStore()
+        );
+        resultScene->setMatch(m_match);
         if (m_manager) {
-            m_manager->replaceScene(std::make_unique<ResultScene>(m_match));
+            m_manager->replaceScene(std::move(resultScene));
+        } else {
+            SceneManager::get().replaceScene(std::move(resultScene));
         }
     } else {
         // Next round
@@ -234,6 +298,7 @@ void MatchScene::finishRound() {
         setupTurnUI();
     }
 }
+
 
 void MatchScene::draw() {
     Theme::drawBackgroundGradient();

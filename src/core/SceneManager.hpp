@@ -13,12 +13,15 @@ enum class TransitionState {
 
 class SceneManager {
 public:
+    static SceneManager& get();
+
     SceneManager();
     ~SceneManager();
 
     void setScene(std::unique_ptr<Scene> scene);
     void changeScene(std::unique_ptr<Scene> nextScene, float transitionDuration = 0.3f);
     void replaceScene(std::unique_ptr<Scene> scene);
+    void switchScene(std::unique_ptr<Scene> scene) { changeScene(std::move(scene)); }
 
     void update(float dt);
     void draw();
@@ -37,3 +40,8 @@ private:
 };
 
 } // namespace Starlight
+
+namespace sl {
+    using SceneManager = Starlight::SceneManager;
+}
+

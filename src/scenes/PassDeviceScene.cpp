@@ -7,14 +7,16 @@
 
 namespace Starlight {
 
-PassDeviceScene::PassDeviceScene(std::shared_ptr<Match> match, int moveA)
+PassDeviceScene::PassDeviceScene(std::shared_ptr<Match> match, int moveA, sl::GameSessionContext context)
     : m_match(std::move(match)),
       m_moveA(moveA),
+      m_context(std::move(context)),
       m_btnReady("Estou Pronto! ->", Rectangle{490, 470, 300, 56}, ButtonStyle::Primary) {
 
     m_btnReady.setOnClick([this]() {
         if (m_manager) {
             auto matchScene = std::make_unique<MatchScene>(m_match);
+            matchScene->setSessionContext(m_context);
             matchScene->setPlayer1Move(m_moveA);
             m_manager->changeScene(std::move(matchScene), 0.25f);
         }
@@ -28,11 +30,13 @@ void PassDeviceScene::update(float dt) {
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE)) {
         if (m_manager) {
             auto matchScene = std::make_unique<MatchScene>(m_match);
+            matchScene->setSessionContext(m_context);
             matchScene->setPlayer1Move(m_moveA);
             m_manager->changeScene(std::move(matchScene), 0.25f);
         }
     }
 }
+
 
 void PassDeviceScene::draw() {
     Theme::drawBackgroundGradient();

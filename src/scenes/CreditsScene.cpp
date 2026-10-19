@@ -1,8 +1,21 @@
 #include "CreditsScene.hpp"
 #include "MenuScene.hpp"
-#include "core/SceneManager.hpp"
-#include "ui/Theme.hpp"
-#include "ui/UiLayout.h"
+
+#if defined(__has_include)
+  #if __has_include("core/SceneManager.hpp")
+    #include "core/SceneManager.hpp"
+    #include "ui/Theme.hpp"
+    #include "ui/UiLayout.h"
+  #else
+    #include "../core/SceneManager.hpp"
+    #include "../ui/Theme.hpp"
+    #include "../ui/UiLayout.h"
+  #endif
+#else
+  #include "../core/SceneManager.hpp"
+  #include "../ui/Theme.hpp"
+  #include "../ui/UiLayout.h"
+#endif
 #include <cmath>
 
 namespace Starlight {
@@ -65,7 +78,7 @@ void CreditsScene::draw() {
 
     // Academic Class
     Theme::drawText("Turma:", static_cast<int>(card.x + 70), static_cast<int>(card.y + 304), 18, Theme::TextMuted);
-    Theme::drawText("INI-1A", static_cast<int>(card.x + 150), static_cast<int>(card.y + 302), 22, Theme::NeonPurple);
+    Theme::drawText("INI-1A 2024", static_cast<int>(card.x + 150), static_cast<int>(card.y + 302), 22, Theme::NeonPurple);
 
     DrawLine(static_cast<int>(card.x + 60), static_cast<int>(card.y + 348),
              static_cast<int>(card.x + card.width - 60), static_cast<int>(card.y + 348),

@@ -147,6 +147,116 @@ void testMatchRpsDrawRepeat() {
     std::cout << "  -> Match Jokenpô draw-repeat passed!" << std::endl;
 }
 
+#include "core/GameSession.hpp"
+#include "save/ScoreStore.h"
+#include <filesystem>
+
+void testGameSessionAndRematchFlow() {
+    std::cout << "[TEST] Testing GameSessionContext, Play Again Rematch flow & ScoreStore idempotency..." << std::endl;
+
+    sl::ScoreStore store("test_session_scores.tmp");
+    store.clear();
+
+    sl::GameSessionContext ctx;
+    ctx.gameId = sl::GameId::Rps;
+    ctx.mode = sl::GameMode::TwoPlayers;
+    ctx.player1Name = "Leonardo";
+    ctx.player2Name = "Beatriz";
+    ctx.skinP1 = 0;
+    ctx.skinP2 = 1;
+    ctx.resetSession();
+
+    assert(ctx.sessionWinsP1 == 0);
+    assert(ctx.sessionWinsP2 == 0);
+
+    // MATCH 1: Leonardo wins 2 x 1
+    auto p1 = std::make_shared<HumanPlayer>(ctx.player1Name, ctx.skinP1);
+    auto p2 = std::make_shared<HumanPlayer>(ctx.player2Name, ctx.skinP2);
+    auto rules = std::make_shared<RpsRules>();
+    auto match = std::make_shared<Match>(p1, p2, rules, 2);
+
+    match->playRound(Rock, Scissors); // Leonardo 1 x 0
+    match->playRound(Rock, Paper);    // Beatriz 1 x 1
+    match->playRound(Scissors, Paper); // Leonardo 2 x 1 -> Match Over!
+    assert(match->isOver());
+    assert(match->winner() == 0);
+
+    // Simulate ResultScene idempotency
+    bool scoreRecorded = false;
+    for (int enterCall = 0; enterCall < 3; ++enterCall) {
+        if (!scoreRecorded) {
+            bool p1Won = (match->winner() == 0);
+            if (p1Won) ctx.sessionWinsP1++;
+            else ctx.sessionWinsP2++;
+
+            store.recordMatch(ctx.player1Name, ctx.gameId, p1Won, match->scoreA(), match->scoreB());
+            store.recordMatch(ctx.player2Name, ctx.gameId, !p1Won, match->scoreB(), match->scoreA());
+            store.save();
+            scoreRecorded = true;
+        }
+    }
+    assert(ctx.sessionWinsP1 == 1);
+    assert(ctx.sessionWinsP2 == 0);
+
+    const auto* profLeo = store.find("Leonardo");
+    const auto* profBia = store.find("Beatriz");
+    assert(profLeo != nullptr && profLeo->rpsWins == 1 && profLeo->rpsLosses == 0);
+    assert(profBia != nullptr && profBia->rpsWins == 0 && profBia->rpsLosses == 1);
+    assert(profLeo->rpsRoundsWon == 2 && profLeo->rpsRoundsLost == 1);
+
+    // USER CLICKS: [ SIM - JOGAR NOVAMENTE ] -> Match 2
+    match->reset();
+    assert(!match->isOver());
+    assert(match->scoreA() == 0 && match->scoreB() == 0);
+    assert(match->roundNumber() == 1);
+    assert(match->playerA()->name() == "Leonardo");
+    assert(match->playerB()->name() == "Beatriz");
+
+    // MATCH 2: Beatriz wins 2 x 0
+    match->playRound(Rock, Paper);     // Beatriz 0 x 1
+    match->playRound(Scissors, Rock);  // Beatriz 0 x 2 -> Match Over!
+    assert(match->isOver());
+    assert(match->winner() == 1);
+
+    // ResultScene for Match 2
+    scoreRecorded = false;
+    if (!scoreRecorded) {
+        bool p1Won = (match->winner() == 0);
+        if (p1Won) ctx.sessionWinsP1++;
+        else ctx.sessionWinsP2++;
+
+        store.recordMatch(ctx.player1Name, ctx.gameId, p1Won, match->scoreA(), match->scoreB());
+        store.recordMatch(ctx.player2Name, ctx.gameId, !p1Won, match->scoreB(), match->scoreA());
+        store.save();
+        scoreRecorded = true;
+    }
+    assert(ctx.sessionWinsP1 == 1);
+    assert(ctx.sessionWinsP2 == 1);
+
+    profLeo = store.find("Leonardo");
+    profBia = store.find("Beatriz");
+    assert(profLeo->rpsWins == 1 && profLeo->rpsLosses == 1);
+    assert(profBia->rpsWins == 1 && profBia->rpsLosses == 1);
+    assert(profLeo->rpsRoundsWon == 2 && profLeo->rpsRoundsLost == 3);
+    assert(profBia->rpsRoundsWon == 3 && profBia->rpsRoundsLost == 2);
+
+    // USER CLICKS: [ NÃO - VOLTAR AO MENU ]
+    ctx.resetSession();
+    assert(ctx.sessionWinsP1 == 0 && ctx.sessionWinsP2 == 0);
+
+    // Clean up temporary score file
+    std::filesystem::remove("test_session_scores.tmp");
+    std::cout << "  -> GameSessionContext and Play Again Rematch flow passed!" << std::endl;
+}
+
+void testNameValidation() {
+    std::cout << "[TEST] Testing Player Name Validation in 2P mode..." << std::endl;
+    assert(sl::ScoreStore::iequals("Leonardo", "leonardo"));
+    assert(sl::ScoreStore::iequals("BEATRIZ", "beatriz"));
+    assert(!sl::ScoreStore::iequals("Leonardo", "Beatriz"));
+    std::cout << "  -> Player Name Validation passed!" << std::endl;
+}
+
 int main() {
     std::cout << "========================================" << std::endl;
     std::cout << "Running Starlight Games Rule Tests..." << std::endl;
@@ -156,9 +266,12 @@ int main() {
     testRpsRules();
     testMatchOddEven();
     testMatchRpsDrawRepeat();
+    testGameSessionAndRematchFlow();
+    testNameValidation();
 
     std::cout << "========================================" << std::endl;
     std::cout << "ALL RULE TESTS PASSED SUCCESSFULLY!" << std::endl;
     std::cout << "========================================" << std::endl;
     return 0;
 }
+

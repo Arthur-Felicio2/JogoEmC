@@ -437,28 +437,29 @@ struct UiLayout {
 ## 7. Fases de Execução e Checklist de Aceite
 
 ### Fase 1 — Rotas e "Jogar Novamente" (Prioridade Alta)
-- [ ] Criar a struct `GameSessionContext` para carregar nomes dos jogadores e opções de jogo entre as cenas.
-- [ ] Implementar a `ResultScene` com a pergunta explícita: **"Quer jogar novamente?"**.
-- [ ] Fazer o botão **"SIM"** instanciar nova `MatchScene` reutilizando os mesmos jogadores e zerando as rodadas.
-- [ ] Fazer o botão **"NÃO"** salvar dados e retornar com segurança à `MenuScene`.
-- [ ] Adicionar atalho de teclado: tecla **ENTER** aciona o "SIM"; tecla **ESC** aciona o "NÃO".
-- [ ] Testar idempotência: garantir que o placar no `scores.txt` seja gravado exatamente uma única vez por partida terminada.
+- [x] Criar a struct `GameSessionContext` para carregar nomes dos jogadores e opções de jogo entre as cenas.
+- [x] Implementar a `ResultScene` com a pergunta explícita: **"Quer jogar novamente?"**.
+- [x] Fazer o botão **"SIM"** instanciar nova `MatchScene` reutilizando os mesmos jogadores e zerando as rodadas.
+- [x] Fazer o botão **"NÃO"** salvar dados e retornar com segurança à `MenuScene`.
+- [x] Adicionar atalho de teclado: tecla **ENTER** aciona o "SIM"; tecla **ESC** aciona o "NÃO".
+- [x] Testar idempotência: garantir que o placar no `scores.txt` seja gravado exatamente uma única vez por partida terminada.
 
 ### Fase 2 — Aplicação da Paleta Preto & Roxo (Prioridade Alta)
-- [ ] Atualizar `Theme.h` com as cores hexadecimais `#0A0713`, `#150D2A`, `#1A1333`, `#6C2BD9`, `#B784FF`.
-- [ ] Atualizar o shader ou rotina de desenho de fundo para desenhar o gradiente suave preto-roxo.
-- [ ] Estilizar cartões, caixas de texto e janelas com bordas `BorderSubtle` (`#392666`) e cantos arredondados.
-- [ ] Atualizar o HUD de pontuação durante a partida para os cartões escuros com texto branco/lilás.
+- [x] Atualizar `Theme.h` com as cores hexadecimais `#0A0713`, `#150D2A`, `#1A1333`, `#6C2BD9`, `#B784FF`.
+- [x] Atualizar o shader ou rotina de desenho de fundo para desenhar o gradiente suave preto-roxo.
+- [x] Estilizar cartões, caixas de texto e janelas com bordas `BorderSubtle` (`#392666`) e cantos arredondados.
+- [x] Atualizar o HUD de pontuação durante a partida para os cartões escuros com texto branco/lilás.
 
 ### Fase 3 — Ajustes de Disposição e Responsividade dos Botões (Prioridade Média)
-- [ ] Integrar `UiLayout` nos menus para que todos os botões fiquem centralizados e alinhados automaticamente.
-- [ ] Ajustar altura dos botões para 56–60 px e padding interno para textos não colidirem nas bordas.
-- [ ] Adicionar efeito hover com elevação visual (sombra suave + brilho de borda violeta).
-- [ ] Verificar a disposição das 6 poses de mão (pixel art) sobre o novo fundo escuro, garantindo contraste perfeito.
+- [x] Integrar `UiLayout` nos menus para que todos os botões fiquem centralizados e alinhados automaticamente.
+- [x] Ajustar altura dos botões para 56–60 px e padding interno para textos não colidirem nas bordas.
+- [x] Adicionar efeito hover com elevação visual (sombra suave + brilho de borda violeta).
+- [x] Verificar a disposição das 6 poses de mão (pixel art) sobre o novo fundo escuro, garantindo contraste perfeito.
 
 ### Fase 4 — Testes e Validação Final (Critérios de Aceite)
-- [ ] **Fluxo Par ou Ímpar:** Menu -> Escolhe Par ou Ímpar -> Cria/Digita Nome -> Joga Partida (Melhor de 3) -> Tela de Resultado pergunta "Quer jogar novamente?" -> [SIM] Inicia nova partida imediata -> [NÃO] Volta ao Menu.
-- [ ] **Fluxo Jokenpô:** Menu -> Escolhe Jokenpô -> Cria/Digita Nome -> Joga Partida (Melhor de 3) -> Tela de Resultado pergunta "Quer jogar novamente?" -> [SIM] Inicia nova partida imediata -> [NÃO] Volta ao Menu.
-- [ ] **Persistência do Placar:** Jogar 3 partidas seguidas clicando em [SIM] e conferir se o `scores.txt` acumulou as 3 vitórias/derrotas corretamente sem duplicidade.
-- [ ] **Estética:** Nenhuma tela exibe resquícios da cor verde antiga. Toda a navegação é imersiva em preto e roxo.
-- [ ] **Responsividade:** Janela redimensionada ou em tela cheia mantém todos os elementos centrados, sem cortes de texto nem botões desalinhados.
+- [x] **Fluxo Par ou Ímpar:** Menu -> Escolhe Par ou Ímpar -> Cria/Digita Nome -> Joga Partida (Melhor de 3) -> Tela de Resultado pergunta "Quer jogar novamente?" -> [SIM] Inicia nova partida imediata -> [NÃO] Volta ao Menu.
+- [x] **Fluxo Jokenpô:** Menu -> Escolhe Jokenpô -> Cria/Digita Nome -> Joga Partida (Melhor de 3) -> Tela de Resultado pergunta "Quer jogar novamente?" -> [SIM] Inicia nova partida imediata -> [NÃO] Volta ao Menu.
+- [x] **Persistência do Placar:** Jogar 3 partidas seguidas clicando em [SIM] e conferir se o `scores.txt` acumulou as 3 vitórias/derrotas corretamente sem duplicidade.
+- [x] **Estética:** Nenhuma tela exibe resquícios da cor verde antiga. Toda a navegação é imersiva em preto e roxo.
+- [x] **Responsividade:** Janela redimensionada ou em tela cheia mantém todos os elementos centrados, sem cortes de texto nem botões desalinhados.
+

@@ -119,27 +119,45 @@ void NameEntryScene::confirmAndStart() {
         return;
     }
 
-    auto p1 = std::make_shared<HumanPlayer>(name1, m_skinToneP1);
-    std::shared_ptr<IPlayer> p2;
-    if (m_isTwoPlayers) {
-        p2 = std::make_shared<HumanPlayer>(name2, m_skinToneP2);
-    } else {
-        p2 = std::make_shared<CpuPlayer>("Computador", m_skinToneP2);
-    }
+    sl::GameSessionContext ctx;
+    ctx.gameId = (m_gameType == GameType::OddEven) ? sl::GameId::OddEven : sl::GameId::Rps;
+    ctx.mode = m_isTwoPlayers ? sl::GameMode::TwoPlayers : sl::GameMode::SinglePlayer;
+    ctx.player1Name = name1;
+    ctx.player2Name = m_isTwoPlayers ? name2 : "Computador";
+    ctx.skinP1 = m_skinToneP1;
+    ctx.skinP2 = m_skinToneP2;
+    ctx.p1IsEven = m_p1IsEven;
+    ctx.resetSession();
 
-    std::shared_ptr<IGameRules> rules;
-    if (m_gameType == GameType::OddEven) {
-        rules = std::make_shared<OddEvenRules>(m_p1IsEven);
-    } else {
-        rules = std::make_shared<RpsRules>();
-    }
-
-    auto match = std::make_shared<Match>(p1, p2, rules, 2);
-    m_manager->changeScene(std::make_unique<MatchScene>(match));
+    auto matchScene = std::make_unique<MatchScene>(ctx, Application::instance().scoreStore());
+    m_manager->changeScene(std::move(matchScene));
 }
 
 void NameEntryScene::update(float dt) {
     m_animTimer += dt;
+
+    Rectangle card = m_isTwoPlayers ? UiLayout::centerCard(880.0f, 560.0f) : UiLayout::centerCard(540.0f, 540.0f);
+    m_btnConfirm.setBounds(Rectangle{card.x + (card.width - 320.0f) * 0.5f, card.y + card.height - 75.0f, 320.0f, 54.0f});
+
+    if (m_isTwoPlayers) {
+        Rectangle p1Box = { card.x + 20, card.y + 90, (card.width - 60) * 0.5f, 310 };
+        Rectangle p2Box = { p1Box.x + p1Box.width + 20, card.y + 90, p1Box.width, 310 };
+        m_nameFieldP1.setBounds(Rectangle{p1Box.x + 20, p1Box.y + 75, p1Box.width - 40, 48});
+        m_nameFieldP2.setBounds(Rectangle{p2Box.x + 20, p2Box.y + 75, p2Box.width - 40, 48});
+
+        for (size_t c = 0; c < m_chipsP1.size(); ++c) {
+            m_chipsP1[c].setBounds(Rectangle{p1Box.x + 20.0f + c * 82.0f, p1Box.y + 245.0f, 76.0f, 32.0f});
+        }
+        for (size_t c = 0; c < m_chipsP2.size(); ++c) {
+            m_chipsP2[c].setBounds(Rectangle{p2Box.x + 20.0f + c * 82.0f, p2Box.y + 245.0f, 76.0f, 32.0f});
+        }
+    } else {
+        m_nameFieldP1.setBounds(Rectangle{card.x + 80, card.y + 150, card.width - 160, 48});
+        for (size_t c = 0; c < m_chipsP1.size(); ++c) {
+            m_chipsP1[c].setBounds(Rectangle{card.x + 80.0f + c * 86.0f, card.y + 345.0f, 80.0f, 34.0f});
+        }
+    }
+
     m_btnBack.update(dt);
     m_btnConfirm.update(dt);
 
@@ -172,27 +190,38 @@ void NameEntryScene::update(float dt) {
         m_nameFieldP2.setActive(p1Active);
     }
 
-    // Skin Tone selector clicks
+    // Skin Tone selector clicks (exatamente nas mesmas coordenadas do layout)
     Vector2 mouse = Input::getVirtualMousePosition();
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    if (m_isTwoPlayers) {
+        Rectangle p1Box = { card.x + 20.0f, card.y + 90.0f, (card.width - 60.0f) * 0.5f, 310.0f };
+        Rectangle p2Box = { p1Box.x + p1Box.width + 20.0f, card.y + 90.0f, p1Box.width, 310.0f };
+
         // Player 1 skins
-        float skinY1 = m_isTwoPlayers ? 325.0f : 345.0f;
-        float skinX1 = m_isTwoPlayers ? 340.0f : 540.0f;
         for (int i = 0; i < 4; ++i) {
-            Vector2 center = { skinX1 + i * 46.0f, skinY1 };
-            if (CheckCollisionPointCircle(mouse, center, 18.0f)) {
-                m_skinToneP1 = i;
+            Vector2 center = { p1Box.x + 40.0f + i * 46.0f, p1Box.y + 175.0f };
+            if (CheckCollisionPointCircle(mouse, center, 22.0f)) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    m_skinToneP1 = i;
+                }
             }
         }
 
         // Player 2 skins
-        if (m_isTwoPlayers) {
-            float skinY2 = 325.0f;
-            float skinX2 = 740.0f;
-            for (int i = 0; i < 4; ++i) {
-                Vector2 center = { skinX2 + i * 46.0f, skinY2 };
-                if (CheckCollisionPointCircle(mouse, center, 18.0f)) {
+        for (int i = 0; i < 4; ++i) {
+            Vector2 center = { p2Box.x + 40.0f + i * 46.0f, p2Box.y + 175.0f };
+            if (CheckCollisionPointCircle(mouse, center, 22.0f)) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     m_skinToneP2 = i;
+                }
+            }
+        }
+    } else {
+        // Player 1 skins (1P / Flappy)
+        for (int i = 0; i < 4; ++i) {
+            Vector2 center = { card.x + 120.0f + i * 54.0f, card.y + 265.0f };
+            if (CheckCollisionPointCircle(mouse, center, 24.0f)) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    m_skinToneP1 = i;
                 }
             }
         }
@@ -202,6 +231,9 @@ void NameEntryScene::update(float dt) {
 void NameEntryScene::draw() {
     Theme::drawBackgroundGradient();
     m_btnBack.draw();
+
+    Vector2 mouse = Input::getVirtualMousePosition();
+    auto& atlas = Application::instance().handAtlas();
 
     // Backdrop Card
     Rectangle card = m_isTwoPlayers ? UiLayout::centerCard(880.0f, 560.0f) : UiLayout::centerCard(540.0f, 540.0f);
@@ -226,22 +258,29 @@ void NameEntryScene::draw() {
 
     // Player 1 Card Area
     if (m_isTwoPlayers) {
-        Rectangle p1Box = { card.x + 20, card.y + 90, (card.width - 60) * 0.5f, 310 };
+        Rectangle p1Box = { card.x + 20.0f, card.y + 90.0f, (card.width - 60.0f) * 0.5f, 310.0f };
         Theme::drawCard(p1Box, 14.0f, false, Theme::CardSurfaceDark);
         Theme::drawText("JOGADOR 1 (Manga Azul)", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 16), 18, Theme::NeonPurple);
         Theme::drawText("Nome:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 50), 16, Theme::TextNormal);
         m_nameFieldP1.setBounds(Rectangle{p1Box.x + 20, p1Box.y + 75, p1Box.width - 40, 48});
         m_nameFieldP1.draw();
 
-        Theme::drawText("Tom de Pele:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 135), 16, Theme::TextNormal);
+        std::string skinLabel1 = "Tom de Pele: " + Theme::skinTones()[m_skinToneP1].name;
+        Theme::drawText(skinLabel1, static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 135), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
             Vector2 center = { p1Box.x + 40.0f + i * 46.0f, p1Box.y + 175.0f };
+            bool isHovered = CheckCollisionPointCircle(mouse, center, 20.0f);
             DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 16, Theme::getSkinColor(i));
             if (m_skinToneP1 == i) {
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::BorderGlow);
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::BorderGlow);
+            } else if (isHovered) {
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 18, Theme::NeonPurple);
             }
         }
+
+        // Live hand preview Player 1
+        atlas.draw(0, m_skinToneP1, 0, false, Vector2{ p1Box.x + p1Box.width - 55.0f, p1Box.y + 175.0f }, 2.8f, 0.0f, WHITE);
 
         if (!m_chipsP1.empty()) {
             Theme::drawText("Perfis existentes:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 215), 15, Theme::TextMuted);
@@ -252,22 +291,29 @@ void NameEntryScene::draw() {
         }
 
         // Player 2 Box Area
-        Rectangle p2Box = { p1Box.x + p1Box.width + 20, card.y + 90, p1Box.width, 310 };
+        Rectangle p2Box = { p1Box.x + p1Box.width + 20.0f, card.y + 90.0f, p1Box.width, 310.0f };
         Theme::drawCard(p2Box, 14.0f, false, Theme::CardSurfaceDark);
         Theme::drawText("JOGADOR 2 (Manga Vermelha)", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 16), 18, Theme::ActionMenu);
         Theme::drawText("Nome:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 50), 16, Theme::TextNormal);
         m_nameFieldP2.setBounds(Rectangle{p2Box.x + 20, p2Box.y + 75, p2Box.width - 40, 48});
         m_nameFieldP2.draw();
 
-        Theme::drawText("Tom de Pele:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 135), 16, Theme::TextNormal);
+        std::string skinLabel2 = "Tom de Pele: " + Theme::skinTones()[m_skinToneP2].name;
+        Theme::drawText(skinLabel2, static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 135), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
             Vector2 center = { p2Box.x + 40.0f + i * 46.0f, p2Box.y + 175.0f };
+            bool isHovered = CheckCollisionPointCircle(mouse, center, 20.0f);
             DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 16, Theme::getSkinColor(i));
             if (m_skinToneP2 == i) {
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::BorderGlow);
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::BorderGlow);
+            } else if (isHovered) {
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 18, Theme::NeonPurple);
             }
         }
+
+        // Live hand preview Player 2
+        atlas.draw(0, m_skinToneP2, 1, true, Vector2{ p2Box.x + p2Box.width - 55.0f, p2Box.y + 175.0f }, 2.8f, 0.0f, WHITE);
 
         if (!m_chipsP2.empty()) {
             Theme::drawText("Perfis existentes:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 215), 15, Theme::TextMuted);
@@ -282,15 +328,22 @@ void NameEntryScene::draw() {
         m_nameFieldP1.setBounds(Rectangle{card.x + 80, card.y + 150, card.width - 160, 48});
         m_nameFieldP1.draw();
 
-        Theme::drawText("Tom de Pele:", static_cast<int>(card.x + 80), static_cast<int>(card.y + 220), 16, Theme::TextNormal);
+        std::string skinLabel = "Tom de Pele: " + Theme::skinTones()[m_skinToneP1].name;
+        Theme::drawText(skinLabel, static_cast<int>(card.x + 80), static_cast<int>(card.y + 220), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
             Vector2 center = { card.x + 120.0f + i * 54.0f, card.y + 265.0f };
+            bool isHovered = CheckCollisionPointCircle(mouse, center, 22.0f);
             DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 18, Theme::getSkinColor(i));
             if (m_skinToneP1 == i) {
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 21, Theme::BorderGlow);
                 DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 22, Theme::BorderGlow);
+            } else if (isHovered) {
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::NeonPurple);
             }
         }
+
+        // Live hand preview Player 1
+        atlas.draw(0, m_skinToneP1, 0, false, Vector2{ card.x + card.width - 110.0f, card.y + 265.0f }, 3.2f, 0.0f, WHITE);
 
         if (!m_chipsP1.empty()) {
             Theme::drawText("Perfis existentes (clique para selecionar):", static_cast<int>(card.x + 80), static_cast<int>(card.y + 315), 15, Theme::TextMuted);
@@ -300,6 +353,7 @@ void NameEntryScene::draw() {
             }
         }
     }
+
 
     // Warning message (if any)
     if (!m_warningMessage.empty()) {

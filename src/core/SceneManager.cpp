@@ -1,7 +1,12 @@
 #include "SceneManager.hpp"
+#include "Application.hpp"
 #include <algorithm>
 
 namespace Starlight {
+
+SceneManager& SceneManager::get() {
+    return Application::instance().sceneManager();
+}
 
 SceneManager::SceneManager() = default;
 

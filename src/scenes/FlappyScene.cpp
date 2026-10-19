@@ -6,6 +6,7 @@
 #include "core/Application.hpp"
 #include "core/Input.hpp"
 #include "ui/Theme.hpp"
+#include "ui/UiLayout.h"
 #include <cmath>
 #include <cstdlib>
 
@@ -183,16 +184,35 @@ void FlappyScene::update(float dt) {
             triggerGameOver();
         }
     } else if (m_state == FlappyState::GameOver) {
+        Rectangle modal = UiLayout::centerCard(520.0f, 430.0f);
+        modal.y = 120.0f;
+
+        float btnW = 210.0f;
+        float gap = 20.0f;
+        float bX1 = modal.x + (modal.width - (btnW * 2 + gap)) * 0.5f;
+        float bX2 = bX1 + btnW + gap;
+
+        m_btnRestart.setBounds(Rectangle{bX1, modal.y + 240.0f, btnW, 48.0f});
+        m_btnChangePlayer.setBounds(Rectangle{bX2, modal.y + 240.0f, btnW, 48.0f});
+        m_btnScores.setBounds(Rectangle{bX1, modal.y + 304.0f, btnW, 48.0f});
+        m_btnMenu.setBounds(Rectangle{bX2, modal.y + 304.0f, btnW, 48.0f});
+
         m_btnRestart.update(dt);
         m_btnChangePlayer.update(dt);
         m_btnScores.update(dt);
         m_btnMenu.update(dt);
 
-        if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+        if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
             resetGame();
+        }
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            if (m_manager) {
+                m_manager->changeScene(std::make_unique<MenuScene>());
+            }
         }
     }
 }
+
 
 void FlappyScene::checkCollisions() {
     // Ceiling
@@ -247,28 +267,29 @@ void FlappyScene::draw() {
     }
 
     // Sky Background gradient
-    DrawRectangleGradientV(0, 0, 1280, 720, Color{10, 25, 47, 255}, Color{20, 60, 65, 255});
+    DrawRectangleGradientV(0, 0, 1280, 720, Theme::BgDark, Theme::BgDeepPurple);
+    DrawCircleGradient(640, 260, 520, Color{108, 43, 217, 36}, Color{0, 0, 0, 0});
 
     // Parallax Layer 1: Far Mountain Silhouettes
     for (int offset = -1; offset <= 2; ++offset) {
         float x = m_parallaxFarX + offset * 1280.0f + shakeX;
-        DrawTriangle(Vector2{x, GROUND_Y}, Vector2{x + 300, 380}, Vector2{x + 600, GROUND_Y}, Color{15, 45, 55, 255});
-        DrawTriangle(Vector2{x + 500, GROUND_Y}, Vector2{x + 850, 420}, Vector2{x + 1200, GROUND_Y}, Color{18, 48, 60, 255});
+        DrawTriangle(Vector2{x, GROUND_Y}, Vector2{x + 300, 380}, Vector2{x + 600, GROUND_Y}, Color{16, 11, 31, 255});
+        DrawTriangle(Vector2{x + 500, GROUND_Y}, Vector2{x + 850, 420}, Vector2{x + 1200, GROUND_Y}, Color{21, 14, 42, 255});
     }
 
     // Parallax Layer 2: Near Spire City Silhouettes
     for (int offset = -1; offset <= 2; ++offset) {
         float x = m_parallaxNearX + offset * 1280.0f + shakeX;
-        DrawRectangle(static_cast<int>(x + 100), 480, 120, static_cast<int>(GROUND_Y - 480), Color{14, 38, 48, 255});
-        DrawRectangle(static_cast<int>(x + 260), 520, 90, static_cast<int>(GROUND_Y - 520), Color{12, 34, 44, 255});
-        DrawRectangle(static_cast<int>(x + 500), 460, 140, static_cast<int>(GROUND_Y - 460), Color{14, 38, 48, 255});
-        DrawRectangle(static_cast<int>(x + 780), 500, 110, static_cast<int>(GROUND_Y - 500), Color{12, 34, 44, 255});
+        DrawRectangle(static_cast<int>(x + 100), 480, 120, static_cast<int>(GROUND_Y - 480), Color{26, 19, 51, 240});
+        DrawRectangle(static_cast<int>(x + 260), 520, 90, static_cast<int>(GROUND_Y - 520), Color{37, 28, 69, 240});
+        DrawRectangle(static_cast<int>(x + 500), 460, 140, static_cast<int>(GROUND_Y - 460), Color{26, 19, 51, 240});
+        DrawRectangle(static_cast<int>(x + 780), 500, 110, static_cast<int>(GROUND_Y - 500), Color{37, 28, 69, 240});
     }
 
-    // Pipes
-    Color pipeColor = Color{34, 139, 94, 255};
-    Color pipeBorder = Color{20, 80, 55, 255};
-    Color pipeHighlight = Color{56, 189, 130, 255};
+    // Pipes (Dark Violet & Neon Violet)
+    Color pipeColor = Theme::CardSurfaceHover;
+    Color pipeBorder = Theme::BorderGlow;
+    Color pipeHighlight = Theme::NeonPurple;
 
     for (const auto& p : m_pipes) {
         float px = p.x + shakeX;
@@ -277,33 +298,33 @@ void FlappyScene::draw() {
         Rectangle topRect = { px, 0, PIPE_WIDTH, p.topHeight };
         DrawRectangleRec(topRect, pipeColor);
         DrawRectangle(static_cast<int>(px + 10), 0, 14, static_cast<int>(p.topHeight), pipeHighlight);
-        DrawRectangleLinesEx(topRect, 3.0f, pipeBorder);
+        DrawRectangleLinesEx(topRect, 2.5f, pipeBorder);
 
         // Top Pipe Rim Collar
         Rectangle topCollar = { px - 6, p.topHeight - 26, PIPE_WIDTH + 12, 26 };
         DrawRectangleRounded(topCollar, 0.2f, 4, pipeColor);
-        DrawRectangleRoundedLines(topCollar, 0.2f, 4, 3.0f, pipeBorder);
+        DrawRectangleRoundedLines(topCollar, 0.2f, 4, 2.5f, pipeBorder);
 
         // Bottom Pipe
         float botY = p.topHeight + p.gap;
         Rectangle botRect = { px, botY, PIPE_WIDTH, GROUND_Y - botY };
         DrawRectangleRec(botRect, pipeColor);
         DrawRectangle(static_cast<int>(px + 10), static_cast<int>(botY), 14, static_cast<int>(GROUND_Y - botY), pipeHighlight);
-        DrawRectangleLinesEx(botRect, 3.0f, pipeBorder);
+        DrawRectangleLinesEx(botRect, 2.5f, pipeBorder);
 
         // Bottom Pipe Rim Collar
         Rectangle botCollar = { px - 6, botY, PIPE_WIDTH + 12, 26 };
         DrawRectangleRounded(botCollar, 0.2f, 4, pipeColor);
-        DrawRectangleRoundedLines(botCollar, 0.2f, 4, 3.0f, pipeBorder);
+        DrawRectangleRoundedLines(botCollar, 0.2f, 4, 2.5f, pipeBorder);
     }
 
     // Ground Strip
-    DrawRectangle(0, static_cast<int>(GROUND_Y), 1280, static_cast<int>(720 - GROUND_Y), Color{22, 60, 48, 255});
-    DrawLine(0, static_cast<int>(GROUND_Y), 1280, static_cast<int>(GROUND_Y), Color{52, 160, 110, 255});
+    DrawRectangle(0, static_cast<int>(GROUND_Y), 1280, static_cast<int>(720 - GROUND_Y), Theme::CardSurfaceDark);
+    DrawLine(0, static_cast<int>(GROUND_Y), 1280, static_cast<int>(GROUND_Y), Theme::BorderGlow);
     for (int offset = -1; offset <= 2; ++offset) {
         float gx = m_groundX + offset * 1280.0f;
         for (int i = 0; i < 16; ++i) {
-            DrawRectangle(static_cast<int>(gx + i * 80), static_cast<int>(GROUND_Y + 10), 40, 8, Color{16, 45, 36, 255});
+            DrawRectangle(static_cast<int>(gx + i * 80), static_cast<int>(GROUND_Y + 10), 40, 8, Theme::BgDark);
         }
     }
 
@@ -331,65 +352,67 @@ void FlappyScene::draw() {
 
     // Player name badge in HUD
     std::string badge = "Jogador: " + m_playerName;
-    Theme::drawText(badge, 150, 34, 18, Theme::TEXT_SECONDARY);
+    Theme::drawText(badge, 150, 34, 18, Theme::TextNormal);
 
     // In-game score counter HUD
     if (m_state == FlappyState::Playing || m_state == FlappyState::Ready) {
         std::string sStr = std::to_string(m_score);
         int sw = Theme::measureText(sStr, 64);
         Theme::drawText(sStr, static_cast<int>(640 - sw * 0.5f) + 3, 53, 64, Color{0, 0, 0, 120});
-        Theme::drawText(sStr, static_cast<int>(640 - sw * 0.5f), 50, 64, Theme::TEXT_PRIMARY);
+        Theme::drawText(sStr, static_cast<int>(640 - sw * 0.5f), 50, 64, Theme::TextBright);
     }
 
     // Ready prompt overlay
     if (m_state == FlappyState::Ready) {
-        Rectangle card = { 380, 220, 520, 150 };
+        Rectangle card = UiLayout::centerCard(520.0f, 150.0f);
+        card.y = 220.0f;
         Theme::drawCard(card, 16.0f, true);
         const char* rTitle = "STARLIGHT BIRD";
         int rtw = Theme::measureText(rTitle, 28);
-        Theme::drawText(rTitle, static_cast<int>(card.x + (card.width - rtw) * 0.5f), static_cast<int>(card.y + 24), 28, Theme::ACCENT_GOLD);
+        Theme::drawText(rTitle, static_cast<int>(card.x + (card.width - rtw) * 0.5f), static_cast<int>(card.y + 24), 28, Theme::TrophyGold);
 
         const char* rPrompt = "Pressione ESPAÇO ou CLIQUE para voar!";
         int rpw = Theme::measureText(rPrompt, 20);
-        Theme::drawText(rPrompt, static_cast<int>(card.x + (card.width - rpw) * 0.5f), static_cast<int>(card.y + 75), 20, Theme::TEXT_PRIMARY);
+        Theme::drawText(rPrompt, static_cast<int>(card.x + (card.width - rpw) * 0.5f), static_cast<int>(card.y + 75), 20, Theme::TextBright);
 
         std::string rRec = "Recorde de " + m_playerName + ": " + std::to_string(m_highScore) + " canos";
         int rrw = Theme::measureText(rRec, 16);
-        Theme::drawText(rRec, static_cast<int>(card.x + (card.width - rrw) * 0.5f), static_cast<int>(card.y + 110), 16, Theme::TEXT_SECONDARY);
+        Theme::drawText(rRec, static_cast<int>(card.x + (card.width - rrw) * 0.5f), static_cast<int>(card.y + 110), 16, Theme::TextNormal);
     }
 
     // Game Over Panel
     if (m_state == FlappyState::GameOver) {
         m_particles.draw();
 
-        Rectangle modal = { 390, 120, 500, 410 };
+        Rectangle modal = UiLayout::centerCard(520.0f, 430.0f);
+        modal.y = 120.0f;
         Theme::drawCard(modal, 20.0f, true);
 
         const char* goTitle = "FIM DE JOGO!";
         int gow = Theme::measureText(goTitle, 32);
-        Theme::drawText(goTitle, static_cast<int>(modal.x + (modal.width - gow) * 0.5f), static_cast<int>(modal.y + 24), 32, Theme::ALERT_DANGER);
+        Theme::drawText(goTitle, static_cast<int>(modal.x + (modal.width - gow) * 0.5f), static_cast<int>(modal.y + 24), 32, Theme::ActionMenu);
 
         if (m_isNewHighScore) {
             const char* nhs = "★ NOVO RECORDE PESSOAL! ★";
             int nw = Theme::measureText(nhs, 22);
-            Theme::drawText(nhs, static_cast<int>(modal.x + (modal.width - nw) * 0.5f), static_cast<int>(modal.y + 70), 22, Theme::ACCENT_GOLD);
+            Theme::drawText(nhs, static_cast<int>(modal.x + (modal.width - nw) * 0.5f), static_cast<int>(modal.y + 70), 22, Theme::TrophyGold);
         } else {
             std::string subUser = "Boa tentativa, " + m_playerName + "!";
             int uw = Theme::measureText(subUser, 18);
-            Theme::drawText(subUser, static_cast<int>(modal.x + (modal.width - uw) * 0.5f), static_cast<int>(modal.y + 70), 18, Theme::TEXT_SECONDARY);
+            Theme::drawText(subUser, static_cast<int>(modal.x + (modal.width - uw) * 0.5f), static_cast<int>(modal.y + 70), 18, Theme::TextNormal);
         }
 
         // Score row
-        Theme::drawText("Pontuação da Rodada:", static_cast<int>(modal.x + 60), static_cast<int>(modal.y + 115), 20, Theme::TEXT_SECONDARY);
+        Theme::drawText("Pontuação da Rodada:", static_cast<int>(modal.x + 60), static_cast<int>(modal.y + 115), 20, Theme::TextNormal);
         std::string sc = std::to_string(m_score);
         int scw = Theme::measureText(sc, 28);
-        Theme::drawText(sc, static_cast<int>(modal.x + modal.width - 60 - scw), static_cast<int>(modal.y + 112), 28, Theme::ACCENT_GOLD);
+        Theme::drawText(sc, static_cast<int>(modal.x + modal.width - 60 - scw), static_cast<int>(modal.y + 112), 28, Theme::TrophyGold);
 
         // Best score row
-        Theme::drawText("Seu Melhor Recorde:", static_cast<int>(modal.x + 60), static_cast<int>(modal.y + 165), 20, Theme::TEXT_SECONDARY);
+        Theme::drawText("Seu Melhor Recorde:", static_cast<int>(modal.x + 60), static_cast<int>(modal.y + 165), 20, Theme::TextNormal);
         std::string bc = std::to_string(m_highScore);
         int bcw = Theme::measureText(bc, 28);
-        Theme::drawText(bc, static_cast<int>(modal.x + modal.width - 60 - bcw), static_cast<int>(modal.y + 162), 28, Theme::TEXT_PRIMARY);
+        Theme::drawText(bc, static_cast<int>(modal.x + modal.width - 60 - bcw), static_cast<int>(modal.y + 162), 28, Theme::TextBright);
 
         m_btnRestart.draw();
         m_btnChangePlayer.draw();
@@ -399,5 +422,6 @@ void FlappyScene::draw() {
 
     m_btnBack.draw();
 }
+
 
 } // namespace Starlight
