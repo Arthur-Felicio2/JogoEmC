@@ -7,6 +7,7 @@
 #include "core/Application.hpp"
 #include "core/Input.hpp"
 #include "ui/Theme.hpp"
+#include "ui/UiLayout.h"
 #include "games/OddEvenRules.hpp"
 #include "games/RpsRules.hpp"
 #include "games/HumanPlayer.hpp"
@@ -29,8 +30,8 @@ NameEntryScene::NameEntryScene(GameType gameType,
       m_nameFieldP2(defaultName2, "Digite o nome...", Rectangle{0, 0, 320, 48}, 12),
       m_skinToneP1(skinTone1),
       m_skinToneP2(skinTone2),
-      m_btnConfirm("Iniciar Partida", Rectangle{490, 560, 300, 56}, ButtonStyle::Primary),
-      m_btnBack("Voltar", Rectangle{40, 24, 100, 44}, ButtonStyle::Secondary) {
+      m_btnConfirm("Iniciar Partida ->", Rectangle{490, 560, 300, 56}, ButtonStyle::Primary),
+      m_btnBack("<- Voltar", Rectangle{40, 24, 110, 44}, ButtonStyle::Secondary) {
 
     // Configure layout depending on 1P vs 2P vs Flappy
     if (m_isTwoPlayers) {
@@ -39,7 +40,7 @@ NameEntryScene::NameEntryScene(GameType gameType,
     } else {
         m_nameFieldP1 = TextField(defaultName1, "Seu nome", Rectangle{480, 260, 320, 48}, 12);
         if (m_gameType == GameType::Flappy) {
-            m_btnConfirm.setText("Começar a Voar!");
+            m_btnConfirm.setText("Começar a Voar! ->");
         }
     }
 
@@ -203,8 +204,8 @@ void NameEntryScene::draw() {
     m_btnBack.draw();
 
     // Backdrop Card
-    Rectangle card = m_isTwoPlayers ? Rectangle{200, 90, 880, 550} : Rectangle{380, 100, 520, 530};
-    Theme::drawCard(card, 20.0f, true);
+    Rectangle card = m_isTwoPlayers ? UiLayout::centerCard(880.0f, 560.0f) : UiLayout::centerCard(540.0f, 540.0f);
+    Theme::drawCard(card, 22.0f, true);
 
     // Header Title
     std::string title;
@@ -217,83 +218,97 @@ void NameEntryScene::draw() {
     }
 
     int tw = Theme::measureText(title, 26);
-    Theme::drawText(title, static_cast<int>(card.x + (card.width - tw) * 0.5f), static_cast<int>(card.y + 24), 26, Theme::ACCENT_GOLD);
+    Theme::drawText(title, static_cast<int>(card.x + (card.width - tw) * 0.5f), static_cast<int>(card.y + 24), 26, Theme::NeonPurple);
 
     const char* sub = "Seus resultados e recordes serão salvos no placar!";
     int sw = Theme::measureText(sub, 16);
-    Theme::drawText(sub, static_cast<int>(card.x + (card.width - sw) * 0.5f), static_cast<int>(card.y + 60), 16, Theme::TEXT_SECONDARY);
+    Theme::drawText(sub, static_cast<int>(card.x + (card.width - sw) * 0.5f), static_cast<int>(card.y + 60), 16, Theme::TextMuted);
 
     // Player 1 Card Area
     if (m_isTwoPlayers) {
-        Rectangle p1Box = { 240, 160, 380, 280 };
-        Theme::drawCard(p1Box, 14.0f, false, Color{255, 255, 255, 12});
-        Theme::drawText("JOGADOR 1 (Manga Azul)", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 16), 18, Theme::ACCENT_GOLD);
-        Theme::drawText("Nome:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 50), 16, Theme::TEXT_SECONDARY);
+        Rectangle p1Box = { card.x + 20, card.y + 90, (card.width - 60) * 0.5f, 310 };
+        Theme::drawCard(p1Box, 14.0f, false, Theme::CardSurfaceDark);
+        Theme::drawText("JOGADOR 1 (Manga Azul)", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 16), 18, Theme::NeonPurple);
+        Theme::drawText("Nome:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 50), 16, Theme::TextNormal);
+        m_nameFieldP1.setBounds(Rectangle{p1Box.x + 20, p1Box.y + 75, p1Box.width - 40, 48});
         m_nameFieldP1.draw();
 
-        Theme::drawText("Tom de Pele:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 130), 16, Theme::TEXT_SECONDARY);
+        Theme::drawText("Tom de Pele:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 135), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
-            Vector2 center = { 340.0f + i * 46.0f, 325.0f };
+            Vector2 center = { p1Box.x + 40.0f + i * 46.0f, p1Box.y + 175.0f };
             DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 16, Theme::getSkinColor(i));
             if (m_skinToneP1 == i) {
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::ACCENT_GOLD);
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::ACCENT_GOLD);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::BorderGlow);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::BorderGlow);
             }
         }
 
         if (!m_chipsP1.empty()) {
-            Theme::drawText("Perfis existentes:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 190), 15, Theme::TEXT_SECONDARY);
-            for (auto& chip : m_chipsP1) chip.draw();
+            Theme::drawText("Perfis existentes:", static_cast<int>(p1Box.x + 20), static_cast<int>(p1Box.y + 215), 15, Theme::TextMuted);
+            for (size_t c = 0; c < m_chipsP1.size(); ++c) {
+                m_chipsP1[c].setBounds(Rectangle{p1Box.x + 20.0f + c * 82.0f, p1Box.y + 245.0f, 76.0f, 32.0f});
+                m_chipsP1[c].draw();
+            }
         }
 
         // Player 2 Box Area
-        Rectangle p2Box = { 660, 160, 380, 280 };
-        Theme::drawCard(p2Box, 14.0f, false, Color{255, 255, 255, 12});
-        Theme::drawText("JOGADOR 2 (Manga Vermelha)", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 16), 18, Theme::ALERT_DANGER);
-        Theme::drawText("Nome:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 50), 16, Theme::TEXT_SECONDARY);
+        Rectangle p2Box = { p1Box.x + p1Box.width + 20, card.y + 90, p1Box.width, 310 };
+        Theme::drawCard(p2Box, 14.0f, false, Theme::CardSurfaceDark);
+        Theme::drawText("JOGADOR 2 (Manga Vermelha)", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 16), 18, Theme::ActionMenu);
+        Theme::drawText("Nome:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 50), 16, Theme::TextNormal);
+        m_nameFieldP2.setBounds(Rectangle{p2Box.x + 20, p2Box.y + 75, p2Box.width - 40, 48});
         m_nameFieldP2.draw();
 
-        Theme::drawText("Tom de Pele:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 130), 16, Theme::TEXT_SECONDARY);
+        Theme::drawText("Tom de Pele:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 135), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
-            Vector2 center = { 740.0f + i * 46.0f, 325.0f };
+            Vector2 center = { p2Box.x + 40.0f + i * 46.0f, p2Box.y + 175.0f };
             DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 16, Theme::getSkinColor(i));
             if (m_skinToneP2 == i) {
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::ACCENT_GOLD);
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::ACCENT_GOLD);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::BorderGlow);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::BorderGlow);
             }
         }
 
         if (!m_chipsP2.empty()) {
-            Theme::drawText("Perfis existentes:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 190), 15, Theme::TEXT_SECONDARY);
-            for (auto& chip : m_chipsP2) chip.draw();
+            Theme::drawText("Perfis existentes:", static_cast<int>(p2Box.x + 20), static_cast<int>(p2Box.y + 215), 15, Theme::TextMuted);
+            for (size_t c = 0; c < m_chipsP2.size(); ++c) {
+                m_chipsP2[c].setBounds(Rectangle{p2Box.x + 20.0f + c * 82.0f, p2Box.y + 245.0f, 76.0f, 32.0f});
+                m_chipsP2[c].draw();
+            }
         }
     } else {
         // 1 Player / Flappy
-        Theme::drawText("Nome do Jogador:", 480, 230, 18, Theme::TEXT_PRIMARY);
+        Theme::drawText("Nome do Jogador:", static_cast<int>(card.x + 80), static_cast<int>(card.y + 120), 18, Theme::TextBright);
+        m_nameFieldP1.setBounds(Rectangle{card.x + 80, card.y + 150, card.width - 160, 48});
         m_nameFieldP1.draw();
 
-        Theme::drawText("Tom de Pele:", 480, 318, 16, Theme::TEXT_SECONDARY);
+        Theme::drawText("Tom de Pele:", static_cast<int>(card.x + 80), static_cast<int>(card.y + 220), 16, Theme::TextNormal);
         for (int i = 0; i < 4; ++i) {
-            Vector2 center = { 540.0f + i * 46.0f, 345.0f };
-            DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 16, Theme::getSkinColor(i));
+            Vector2 center = { card.x + 120.0f + i * 54.0f, card.y + 265.0f };
+            DrawCircle(static_cast<int>(center.x), static_cast<int>(center.y), 18, Theme::getSkinColor(i));
             if (m_skinToneP1 == i) {
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 19, Theme::ACCENT_GOLD);
-                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 20, Theme::ACCENT_GOLD);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 21, Theme::BorderGlow);
+                DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), 22, Theme::BorderGlow);
             }
         }
 
         if (!m_chipsP1.empty()) {
-            Theme::drawText("Perfis existentes (clique para selecionar):", 480, 375, 15, Theme::TEXT_SECONDARY);
-            for (auto& chip : m_chipsP1) chip.draw();
+            Theme::drawText("Perfis existentes (clique para selecionar):", static_cast<int>(card.x + 80), static_cast<int>(card.y + 315), 15, Theme::TextMuted);
+            for (size_t c = 0; c < m_chipsP1.size(); ++c) {
+                m_chipsP1[c].setBounds(Rectangle{card.x + 80.0f + c * 86.0f, card.y + 345.0f, 80.0f, 34.0f});
+                m_chipsP1[c].draw();
+            }
         }
     }
 
     // Warning message (if any)
     if (!m_warningMessage.empty()) {
         int ww = Theme::measureText(m_warningMessage, 18);
-        Theme::drawText(m_warningMessage, static_cast<int>(card.x + (card.width - ww) * 0.5f), static_cast<int>(card.y + card.height - 85), 18, Theme::ALERT_DANGER);
+        Theme::drawText(m_warningMessage, static_cast<int>(card.x + (card.width - ww) * 0.5f), static_cast<int>(card.y + card.height - 110), 18, Theme::ActionMenu);
     }
 
+    // Confirm button centered at the bottom of the card
+    m_btnConfirm.setBounds(Rectangle{card.x + (card.width - 320.0f) * 0.5f, card.y + card.height - 75.0f, 320.0f, 54.0f});
     m_btnConfirm.draw();
 }
 

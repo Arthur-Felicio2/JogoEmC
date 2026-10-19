@@ -15,19 +15,19 @@ void Panel::draw() {
 
     if (!m_title.empty()) {
         int titleFontSize = 22;
-        int titleWidth = MeasureText(m_title.c_str(), titleFontSize);
-        DrawText(m_title.c_str(),
-                 (int)(m_bounds.x + (m_bounds.width - titleWidth) * 0.5f),
-                 (int)(m_bounds.y + 18.0f),
-                 titleFontSize,
-                 Theme::ACCENT_GOLD);
+        int titleWidth = Theme::measureText(m_title, titleFontSize);
+        Theme::drawText(m_title,
+                        static_cast<int>(m_bounds.x + (m_bounds.width - titleWidth) * 0.5f),
+                        static_cast<int>(m_bounds.y + 18.0f),
+                        titleFontSize,
+                        Theme::NeonPurple);
 
         // Subtle divider
-        DrawLine((int)(m_bounds.x + 24.0f),
-                 (int)(m_bounds.y + 50.0f),
-                 (int)(m_bounds.x + m_bounds.width - 24.0f),
-                 (int)(m_bounds.y + 50.0f),
-                 Color{255, 255, 255, 30});
+        DrawLine(static_cast<int>(m_bounds.x + 24.0f),
+                 static_cast<int>(m_bounds.y + 50.0f),
+                 static_cast<int>(m_bounds.x + m_bounds.width - 24.0f),
+                 static_cast<int>(m_bounds.y + 50.0f),
+                 Theme::BorderSubtle);
     }
 }
 

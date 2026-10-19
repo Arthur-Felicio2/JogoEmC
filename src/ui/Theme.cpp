@@ -1,7 +1,7 @@
 #include "Theme.hpp"
 #include "core/AssetManager.hpp"
 
-namespace Starlight {
+namespace sl {
 
 static const std::vector<SkinToneInfo> S_SKIN_TONES = {
     {"Claro", Color{252, 215, 190, 255}},       // #FCD7BE
@@ -26,7 +26,7 @@ Color Theme::getSkinColor(int index) {
 
 void Theme::initFont() {
     if (s_fontLoaded) return;
-    std::string fontPath = AssetManager::resolvePath("assets/fonts/segoeui.ttf");
+    std::string fontPath = Starlight::AssetManager::resolvePath("assets/fonts/segoeui.ttf");
     if (FileExists(fontPath.c_str())) {
         // Carrega glifos Latin-1 (0x20 até 0xFF = 224 glifos)
         int codepoints[224];
@@ -68,21 +68,22 @@ int Theme::measureText(const std::string& text, int fontSize) {
 }
 
 void Theme::drawBackgroundGradient() {
-    DrawRectangleGradientV(0, 0, 1280, 720, BG_TOP, BG_BOTTOM);
+    // Gradiente Vertical: BgDark (#0A0713) ao topo e BgDeepPurple (#150D2A) à base
+    DrawRectangleGradientV(0, 0, 1280, 720, BgDark, BgDeepPurple);
 
-    // Subtle table felt pattern / ambient illumination at top center
-    DrawCircleGradient(640, 200, 500, Color{255, 255, 255, 12}, Color{0, 0, 0, 0});
+    // Iluminação ambiental roxa/violeta radial no centro
+    DrawCircleGradient(640, 320, 560, Color{108, 43, 217, 32}, Color{0, 0, 0, 0});
 }
 
 void Theme::drawCard(Rectangle rect, float radius, bool shadow, Color customBg) {
     if (shadow) {
         Rectangle shadowRect = {rect.x, rect.y + 6.0f, rect.width, rect.height};
-        DrawRectangleRounded(shadowRect, radius / (rect.height > 0 ? rect.height : 1.0f), 8, CARD_SHADOW);
+        DrawRectangleRounded(shadowRect, radius / (rect.height > 0 ? rect.height : 1.0f), 8, ShadowColor);
     }
 
     float roundness = radius / (rect.height > 0 ? rect.height : 1.0f);
     DrawRectangleRounded(rect, roundness, 8, customBg);
-    DrawRectangleRoundedLines(rect, roundness, 8, 1.5f, CARD_BORDER);
+    DrawRectangleRoundedLines(rect, roundness, 8, 1.5f, BorderSubtle);
 }
 
 void Theme::drawCardOutline(Rectangle rect, float radius, Color outlineColor, float thickness) {
@@ -90,4 +91,4 @@ void Theme::drawCardOutline(Rectangle rect, float radius, Color outlineColor, fl
     DrawRectangleRoundedLines(rect, roundness, 8, thickness, outlineColor);
 }
 
-} // namespace Starlight
+} // namespace sl

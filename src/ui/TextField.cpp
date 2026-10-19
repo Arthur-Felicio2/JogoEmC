@@ -75,8 +75,8 @@ void TextField::update(float dt) {
 void TextField::draw() {
     if (!m_visible) return;
 
-    Color bgColor = Color{255, 255, 255, static_cast<unsigned char>(m_active ? 30 : 15)};
-    Color borderColor = m_active ? Theme::ACCENT_GOLD : Theme::CARD_BORDER;
+    Color bgColor = m_active ? Theme::CardSurfaceHover : Theme::CardSurfaceDark;
+    Color borderColor = m_active ? Theme::BorderGlow : Theme::BorderSubtle;
 
     DrawRectangleRounded(m_bounds, 10.0f / m_bounds.height, 6, bgColor);
     DrawRectangleRoundedLines(m_bounds, 10.0f / m_bounds.height, 6, m_active ? 2.0f : 1.5f, borderColor);
@@ -86,9 +86,9 @@ void TextField::draw() {
     int drawX = static_cast<int>(m_bounds.x + 14.0f);
 
     if (m_text.empty()) {
-        Theme::drawText(m_placeholder, drawX, drawY, fontSize, Theme::TEXT_SECONDARY);
+        Theme::drawText(m_placeholder, drawX, drawY, fontSize, Theme::TextMuted);
     } else {
-        Theme::drawText(m_text, drawX, drawY, fontSize, Theme::TEXT_PRIMARY);
+        Theme::drawText(m_text, drawX, drawY, fontSize, Theme::TextBright);
     }
 
     // Cursor
@@ -96,7 +96,7 @@ void TextField::draw() {
         bool showCursor = (static_cast<int>(m_cursorTimer * 2.0f) % 2) == 0;
         if (showCursor) {
             int textW = Theme::measureText(m_text, fontSize);
-            DrawRectangle(drawX + textW + 2, drawY + 2, 2, fontSize - 4, Theme::ACCENT_GOLD);
+            DrawRectangle(drawX + textW + 2, drawY + 2, 2, fontSize - 4, Theme::NeonPurple);
         }
     }
 }

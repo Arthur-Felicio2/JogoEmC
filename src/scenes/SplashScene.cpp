@@ -23,29 +23,31 @@ void SplashScene::update(float dt) {
 void SplashScene::draw() {
     Theme::drawBackgroundGradient();
 
-    // Starlight halo glow
-    float glowRadius = 140.0f + m_pulse * 15.0f;
-    DrawCircleGradient(640, 310, glowRadius, Color{244, 185, 66, 60}, Color{0, 0, 0, 0});
+    // Starlight purple neon halo glow
+    float glowRadius = 160.0f + m_pulse * 20.0f;
+    DrawCircleGradient(640, 310, glowRadius, Color{138, 63, 252, 70}, Color{0, 0, 0, 0});
 
     // Central Emblem (Starlight Star)
     Vector2 center = {640, 310};
-    DrawPoly(center, 5, 45.0f + m_pulse * 3.0f, m_timer * 15.0f, Theme::ACCENT_GOLD);
-    DrawPolyLinesEx(center, 5, 45.0f + m_pulse * 3.0f, m_timer * 15.0f, 3.0f, Color{255, 235, 160, 255});
+    DrawPoly(center, 5, 46.0f + m_pulse * 3.0f, m_timer * 15.0f, Theme::NeonPurple);
+    DrawPolyLinesEx(center, 5, 46.0f + m_pulse * 3.0f, m_timer * 15.0f, 3.0f, Theme::TextBright);
 
     // Title
     const char* brand = "STARLIGHT COMPANY";
-    int brandW = MeasureText(brand, 38);
-    DrawText(brand, 640 - brandW / 2, 385, 38, Theme::ACCENT_GOLD);
+    int brandW = Theme::measureText(brand, 38);
+    Theme::drawText(brand, 640 - brandW / 2, 385, 38, Theme::TextBright);
 
     const char* sub = "Apresenta a Coleção de Jogos Clássicos";
-    int subW = MeasureText(sub, 20);
-    DrawText(sub, 640 - subW / 2, 435, 20, Theme::TEXT_SECONDARY);
+    int subW = Theme::measureText(sub, 20);
+    Theme::drawText(sub, 640 - subW / 2, 435, 20, Theme::NeonPurple);
 
     // Subtle press to continue tip
-    const char* tip = "Pressione ESPAÇO para continuar...";
-    int tipW = MeasureText(tip, 16);
+    const char* tip = "Pressione ESPAÇO ou CLIQUE para continuar...";
+    int tipW = Theme::measureText(tip, 16);
     float alphaTip = 0.5f + 0.5f * sinf(m_timer * 4.0f);
-    DrawText(tip, 640 - tipW / 2, 620, 16, Color{245, 247, 242, (unsigned char)(255 * alphaTip)});
+    Color tipCol = Theme::TextMuted;
+    tipCol.a = static_cast<unsigned char>(255 * alphaTip);
+    Theme::drawText(tip, 640 - tipW / 2, 620, 16, tipCol);
 }
 
 } // namespace Starlight

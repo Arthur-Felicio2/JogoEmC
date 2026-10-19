@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
 project(StarlightGames CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -12,9 +13,7 @@ set(CUSTOMIZE_BUILD OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
     raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 5.0
-    GIT_SHALLOW TRUE
+    URL https://github.com/raysan5/raylib/archive/refs/tags/5.0.zip
 )
 
 FetchContent_MakeAvailable(raylib)

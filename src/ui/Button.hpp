@@ -6,10 +6,11 @@
 namespace Starlight {
 
 enum class ButtonStyle {
-    Primary,   // Accent Gold
-    Secondary, // Card Glass
-    Danger,    // Coral / Red
-    Ghost      // Transparent with outline
+    Primary,   // Purple Primary (#6C2BD9)
+    Secondary, // Dark Card Surface (#1A1333)
+    Danger,    // Action Red (#EF4444)
+    Ghost,     // Transparent with subtle border
+    Success    // Action Green (#10B981)
 };
 
 class Button : public Widget {

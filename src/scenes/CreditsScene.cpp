@@ -2,12 +2,13 @@
 #include "MenuScene.hpp"
 #include "core/SceneManager.hpp"
 #include "ui/Theme.hpp"
+#include "ui/UiLayout.h"
 #include <cmath>
 
 namespace Starlight {
 
 CreditsScene::CreditsScene()
-    : m_btnBack("Voltar ao Menu", Rectangle{490, 580, 300, 56}, ButtonStyle::Primary) {
+    : m_btnBack("<- Voltar ao Menu", Rectangle{490, 580, 300, 56}, ButtonStyle::Primary) {
     m_btnBack.setOnClick([this]() {
         if (m_manager) {
             m_manager->changeScene(std::make_unique<MenuScene>());
@@ -18,55 +19,68 @@ CreditsScene::CreditsScene()
 void CreditsScene::update(float dt) {
     m_animTimer += dt;
     m_btnBack.update(dt);
+
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
+        if (m_manager) {
+            m_manager->changeScene(std::make_unique<MenuScene>());
+        }
+    }
 }
 
 void CreditsScene::draw() {
     Theme::drawBackgroundGradient();
 
     // Main Card
-    Rectangle card = {340, 70, 600, 480};
-    Theme::drawCard(card, 18.0f, true);
+    Rectangle card = UiLayout::centerCard(620.0f, 490.0f);
+    card.y = 65.0f;
+    Theme::drawCard(card, 22.0f, true);
 
     // Title
     const char* title = "CRÉDITOS DO PROJETO";
-    int titleW = MeasureText(title, 28);
-    DrawText(title, (int)(card.x + (card.width - titleW) * 0.5f), (int)(card.y + 30), 28, Theme::ACCENT_GOLD);
+    int titleW = Theme::measureText(title, 26);
+    Theme::drawText(title, static_cast<int>(card.x + (card.width - titleW) * 0.5f), static_cast<int>(card.y + 26), 26, Theme::NeonPurple);
 
     // Star icon
-    Vector2 starPos = {card.x + card.width * 0.5f, card.y + 85};
-    DrawPoly(starPos, 5, 14.0f, m_animTimer * 20.0f, Theme::ACCENT_GOLD);
+    Vector2 starPos = {card.x + card.width * 0.5f, card.y + 78};
+    DrawPoly(starPos, 5, 14.0f, m_animTimer * 20.0f, Theme::NeonPurple);
+    DrawPolyLinesEx(starPos, 5, 14.0f, m_animTimer * 20.0f, 2.0f, Theme::TextBright);
 
     // Organization
     const char* org = "STARLIGHT COMPANY";
-    int orgW = MeasureText(org, 22);
-    DrawText(org, (int)(card.x + (card.width - orgW) * 0.5f), (int)(card.y + 115), 22, Theme::TEXT_PRIMARY);
+    int orgW = Theme::measureText(org, 22);
+    Theme::drawText(org, static_cast<int>(card.x + (card.width - orgW) * 0.5f), static_cast<int>(card.y + 104), 22, Theme::TextBright);
 
-    DrawLine((int)(card.x + 80), (int)(card.y + 155), (int)(card.x + card.width - 80), (int)(card.y + 155), Color{255, 255, 255, 30});
+    DrawLine(static_cast<int>(card.x + 60), static_cast<int>(card.y + 144),
+             static_cast<int>(card.x + card.width - 60), static_cast<int>(card.y + 144),
+             Theme::BorderSubtle);
 
     // Authors
-    DrawText("Desenvolvido por:", (int)(card.x + 80), (int)(card.y + 180), 18, Theme::TEXT_SECONDARY);
+    Theme::drawText("Desenvolvido por:", static_cast<int>(card.x + 70), static_cast<int>(card.y + 168), 18, Theme::TextMuted);
 
-    DrawText("• Arthur Moreira Felicio", (int)(card.x + 80), (int)(card.y + 215), 22, Theme::TEXT_PRIMARY);
-    DrawText("Número: 5", (int)(card.x + 420), (int)(card.y + 215), 20, Theme::ACCENT_GOLD);
+    Theme::drawText("• Arthur Moreira Felicio", static_cast<int>(card.x + 70), static_cast<int>(card.y + 204), 22, Theme::TextBright);
+    Theme::drawText("Número: 5", static_cast<int>(card.x + 440), static_cast<int>(card.y + 204), 20, Theme::NeonPurple);
 
-    DrawText("• Gabriel Sulzbacher Coimbra de Souza", (int)(card.x + 80), (int)(card.y + 260), 22, Theme::TEXT_PRIMARY);
-    DrawText("Número: 10", (int)(card.x + 420), (int)(card.y + 260), 20, Theme::ACCENT_GOLD);
+    Theme::drawText("• Gabriel Sulzbacher Coimbra de Souza", static_cast<int>(card.x + 70), static_cast<int>(card.y + 248), 22, Theme::TextBright);
+    Theme::drawText("Número: 10", static_cast<int>(card.x + 440), static_cast<int>(card.y + 248), 20, Theme::NeonPurple);
 
     // Academic Class
-    DrawText("Turma:", (int)(card.x + 80), (int)(card.y + 315), 18, Theme::TEXT_SECONDARY);
-    DrawText("INI-1A", (int)(card.x + 160), (int)(card.y + 312), 24, Theme::ACCENT_GOLD);
+    Theme::drawText("Turma:", static_cast<int>(card.x + 70), static_cast<int>(card.y + 304), 18, Theme::TextMuted);
+    Theme::drawText("INI-1A", static_cast<int>(card.x + 150), static_cast<int>(card.y + 302), 22, Theme::NeonPurple);
 
-    DrawLine((int)(card.x + 80), (int)(card.y + 360), (int)(card.x + card.width - 80), (int)(card.y + 360), Color{255, 255, 255, 30});
+    DrawLine(static_cast<int>(card.x + 60), static_cast<int>(card.y + 348),
+             static_cast<int>(card.x + card.width - 60), static_cast<int>(card.y + 348),
+             Theme::BorderSubtle);
 
     // Thank you message
     const char* thanks = "Obrigado por Jogar! :)";
-    int thanksW = MeasureText(thanks, 24);
-    DrawText(thanks, (int)(card.x + (card.width - thanksW) * 0.5f), (int)(card.y + 390), 24, Color{52, 211, 153, 255});
+    int thanksW = Theme::measureText(thanks, 24);
+    Theme::drawText(thanks, static_cast<int>(card.x + (card.width - thanksW) * 0.5f), static_cast<int>(card.y + 375), 24, Theme::ActionPlayAgain);
 
     const char* tech = "Construído em C++17 com Raylib & Design System Moderno";
-    int techW = MeasureText(tech, 16);
-    DrawText(tech, (int)(card.x + (card.width - techW) * 0.5f), (int)(card.y + 430), 16, Theme::TEXT_SECONDARY);
+    int techW = Theme::measureText(tech, 16);
+    Theme::drawText(tech, static_cast<int>(card.x + (card.width - techW) * 0.5f), static_cast<int>(card.y + 420), 16, Theme::TextMuted);
 
+    m_btnBack.setBounds(Rectangle{card.x + (card.width - 300.0f) * 0.5f, card.y + card.height + 20.0f, 300.0f, 54.0f});
     m_btnBack.draw();
 }
 

@@ -3,31 +3,51 @@
 #include <vector>
 #include <string>
 
-namespace Starlight {
+namespace sl {
 
-struct SkinToneInfo {
-    std::string name;
-    Color color;
-};
+struct Theme {
+    // Fundos e Superfícies
+    static constexpr Color BgDark          = { 10, 7, 19, 255 };      // #0A0713
+    static constexpr Color BgDeepPurple    = { 21, 13, 42, 255 };     // #150D2A
+    static constexpr Color CardSurface     = { 26, 19, 51, 235 };     // #1A1333 (com alpha)
+    static constexpr Color CardSurfaceHover= { 37, 28, 69, 245 };     // #251C45
+    static constexpr Color CardSurfaceDark = { 16, 11, 31, 240 };     // #100B1F
 
-class Theme {
-public:
-    // Core Colors
-    static constexpr Color BG_TOP = Color{11, 61, 46, 255};       // #0B3D2E
-    static constexpr Color BG_BOTTOM = Color{20, 90, 67, 255};    // #145A43
+    // Bordas e Efeitos
+    static constexpr Color BorderSubtle    = { 57, 38, 102, 255 };    // #392666
+    static constexpr Color BorderGlow      = { 138, 63, 252, 255 };   // #8A3FFC
+    static constexpr Color ShadowColor     = { 4, 2, 8, 160 };
 
-    static constexpr Color CARD_BG = Color{255, 255, 255, 20};     // 8% white
-    static constexpr Color CARD_BORDER = Color{255, 255, 255, 34}; // #FFFFFF22
-    static constexpr Color CARD_SHADOW = Color{0, 0, 0, 45};
+    // Roxo Principal (Botões e Destaques)
+    static constexpr Color Primary         = { 108, 43, 217, 255 };   // #6C2BD9
+    static constexpr Color PrimaryHover    = { 139, 69, 255, 255 };   // #8B45FF
+    static constexpr Color PrimaryPressed  = { 83, 28, 184, 255 };    // #531CB8
+    static constexpr Color NeonPurple      = { 183, 132, 255, 255 };  // #B784FF
 
-    static constexpr Color ACCENT_GOLD = Color{244, 185, 66, 255}; // #F4B942
-    static constexpr Color TEXT_PRIMARY = Color{245, 247, 242, 255}; // #F5F7F2
-    static constexpr Color TEXT_SECONDARY = Color{184, 201, 191, 255}; // #B8C9BF
-    static constexpr Color ALERT_DANGER = Color{228, 87, 46, 255};  // #E4572E
-    static constexpr Color SUCCESS_GREEN = Color{52, 211, 153, 255}; // #34D399
+    // Tipografia
+    static constexpr Color TextBright      = { 255, 255, 255, 255 };  // #FFFFFF
+    static constexpr Color TextNormal      = { 225, 219, 244, 255 };  // #E1DBF4
+    static constexpr Color TextMuted       = { 155, 142, 184, 255 };  // #9B8EB8
+
+    // Semânticas e Ações
+    static constexpr Color ActionPlayAgain = { 16, 185, 129, 255 };   // #10B981 (Verde esmeralda harmônico)
+    static constexpr Color ActionMenu      = { 239, 68, 68, 255 };    // #EF4444 (Vermelho rubi)
+    static constexpr Color TrophyGold      = { 245, 158, 11, 255 };   // #F59E0B
+
+    // Aliases para retrocompatibilidade
+    static constexpr Color BG_TOP          = BgDark;
+    static constexpr Color BG_BOTTOM       = BgDeepPurple;
+    static constexpr Color CARD_BG         = CardSurface;
+    static constexpr Color CARD_BORDER     = BorderSubtle;
+    static constexpr Color CARD_SHADOW     = ShadowColor;
+    static constexpr Color ACCENT_GOLD     = TrophyGold;
+    static constexpr Color TEXT_PRIMARY    = TextBright;
+    static constexpr Color TEXT_SECONDARY  = TextNormal;
+    static constexpr Color ALERT_DANGER    = ActionMenu;
+    static constexpr Color SUCCESS_GREEN   = ActionPlayAgain;
 
     // Skin tones
-    static const std::vector<SkinToneInfo>& skinTones();
+    static const std::vector<struct SkinToneInfo>& skinTones();
     static Color getSkinColor(int index);
 
     // Font & Typography (Latin-1 0x20..0xFF)
@@ -39,8 +59,18 @@ public:
 
     // Drawing Helpers
     static void drawBackgroundGradient();
-    static void drawCard(Rectangle rect, float radius = 16.0f, bool shadow = true, Color customBg = CARD_BG);
-    static void drawCardOutline(Rectangle rect, float radius = 16.0f, Color outlineColor = CARD_BORDER, float thickness = 2.0f);
+    static void drawCard(Rectangle rect, float radius = 16.0f, bool shadow = true, Color customBg = CardSurface);
+    static void drawCardOutline(Rectangle rect, float radius = 16.0f, Color outlineColor = BorderSubtle, float thickness = 2.0f);
 };
 
-} // namespace Starlight
+struct SkinToneInfo {
+    std::string name;
+    Color color;
+};
+
+} // namespace sl
+
+namespace Starlight {
+    using Theme = sl::Theme;
+    using SkinToneInfo = sl::SkinToneInfo;
+}

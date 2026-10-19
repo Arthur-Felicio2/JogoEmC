@@ -6,6 +6,7 @@
 #include "core/Application.hpp"
 #include "core/Input.hpp"
 #include "ui/Theme.hpp"
+#include "ui/UiLayout.h"
 #include "fx/Easing.hpp"
 #include "games/RpsRules.hpp"
 #include "games/OddEvenRules.hpp"
@@ -40,12 +41,30 @@ void MatchScene::setPlayer1Move(int move) {
     setupTurnUI();
 }
 
+void MatchScene::chooseMove(int moveIndex) {
+    if (m_phase == MatchPhase::PlayerAChoice) {
+        m_moveA = moveIndex;
+        if (m_match->playerB()->isHuman()) {
+            // 2-player local: switch to PassDeviceScene to conceal move!
+            if (m_manager) {
+                m_manager->changeScene(std::make_unique<PassDeviceScene>(m_match, m_moveA), 0.2f);
+            }
+        } else {
+            // 1-player vs CPU: CPU chooses immediately
+            m_moveB = m_match->playerB()->chooseMove(*m_match->rules());
+            startReveal(m_moveA, m_moveB);
+        }
+    } else if (m_phase == MatchPhase::PlayerBChoice) {
+        // Player B made their choice!
+        m_moveB = moveIndex;
+        startReveal(m_moveA, m_moveB);
+    }
+}
+
 void MatchScene::setupTurnUI() {
     m_moveButtons.clear();
 
     if (m_phase == MatchPhase::PlayerAChoice || m_phase == MatchPhase::PlayerBChoice) {
-        bool isPlayerA = (m_phase == MatchPhase::PlayerAChoice);
-
         int numMoves = m_match->rules()->moveCount();
         float btnW = (numMoves == 6) ? 140.0f : 240.0f;
         float btnH = 56.0f;
@@ -65,24 +84,8 @@ void MatchScene::setupTurnUI() {
             Button btn(label, btnRect, ButtonStyle::Primary);
 
             int moveIndex = i;
-            btn.setOnClick([this, isPlayerA, moveIndex]() {
-                if (isPlayerA) {
-                    m_moveA = moveIndex;
-                    if (m_match->playerB()->isHuman()) {
-                        // 2-player local: switch to PassDeviceScene to conceal move!
-                        if (m_manager) {
-                            m_manager->changeScene(std::make_unique<PassDeviceScene>(m_match, m_moveA), 0.2f);
-                        }
-                    } else {
-                        // 1-player vs CPU: CPU chooses immediately
-                        m_moveB = m_match->playerB()->chooseMove(*m_match->rules());
-                        startReveal(m_moveA, m_moveB);
-                    }
-                } else {
-                    // Player B made their choice!
-                    m_moveB = moveIndex;
-                    startReveal(m_moveA, m_moveB);
-                }
+            btn.setOnClick([this, moveIndex]() {
+                chooseMove(moveIndex);
             });
 
             m_moveButtons.push_back(btn);
@@ -111,11 +114,33 @@ void MatchScene::update(float dt) {
     m_particles.update(dt);
 
     if (m_phase == MatchPhase::PlayerAChoice || m_phase == MatchPhase::PlayerBChoice) {
+        int numMoves = m_match->rules()->moveCount();
+        if (numMoves == 6) {
+            // Par ou Ímpar keyboard shortcuts (0..5)
+            if (IsKeyPressed(KEY_ZERO) || IsKeyPressed(KEY_KP_0)) chooseMove(0);
+            else if (IsKeyPressed(KEY_ONE) || IsKeyPressed(KEY_KP_1)) chooseMove(1);
+            else if (IsKeyPressed(KEY_TWO) || IsKeyPressed(KEY_KP_2)) chooseMove(2);
+            else if (IsKeyPressed(KEY_THREE) || IsKeyPressed(KEY_KP_3)) chooseMove(3);
+            else if (IsKeyPressed(KEY_FOUR) || IsKeyPressed(KEY_KP_4)) chooseMove(4);
+            else if (IsKeyPressed(KEY_FIVE) || IsKeyPressed(KEY_KP_5)) chooseMove(5);
+        } else if (numMoves == 3) {
+            // Jokenpô keyboard shortcuts (1: Pedra, 2: Papel, 3: Tesoura / P, A, T)
+            if (IsKeyPressed(KEY_ONE) || IsKeyPressed(KEY_KP_1) || IsKeyPressed(KEY_P)) chooseMove(0);
+            else if (IsKeyPressed(KEY_TWO) || IsKeyPressed(KEY_KP_2) || IsKeyPressed(KEY_A)) chooseMove(1);
+            else if (IsKeyPressed(KEY_THREE) || IsKeyPressed(KEY_KP_3) || IsKeyPressed(KEY_T)) chooseMove(2);
+        }
+
         for (auto& btn : m_moveButtons) {
             btn.update(dt);
         }
     } else if (m_phase == MatchPhase::RevealAnimation) {
         m_revealTimer += dt;
+
+        // Quick advance if user presses ENTER, SPACE or clicks once result is displayed
+        if (m_revealTimer >= 2.6f && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
+            finishRound();
+            return;
+        }
 
         // 0.0 - 0.4s: Hands enter from sides (easeOutBack)
         if (m_revealTimer < 0.4f) {
@@ -176,15 +201,15 @@ void MatchScene::update(float dt) {
 
                     if (m_roundOutcome == Outcome::WinA) {
                         m_outcomeText = "Vitória de " + m_match->playerA()->name() + "!";
-                        m_outcomeColor = Theme::SUCCESS_GREEN;
+                        m_outcomeColor = Theme::ActionPlayAgain;
                         m_particles.spawnConfetti(380.0f, 380.0f, 60);
                     } else if (m_roundOutcome == Outcome::WinB) {
                         m_outcomeText = "Vitória de " + m_match->playerB()->name() + "!";
-                        m_outcomeColor = Theme::SUCCESS_GREEN;
+                        m_outcomeColor = Theme::ActionPlayAgain;
                         m_particles.spawnConfetti(900.0f, 380.0f, 60);
                     } else {
                         m_outcomeText = "Empate! Rodada repetida!";
-                        m_outcomeColor = Theme::ACCENT_GOLD;
+                        m_outcomeColor = Theme::NeonPurple;
                     }
                 }
             }
@@ -200,7 +225,7 @@ void MatchScene::update(float dt) {
 void MatchScene::finishRound() {
     if (m_match->isOver()) {
         if (m_manager) {
-            m_manager->changeScene(std::make_unique<ResultScene>(m_match), 0.4f);
+            m_manager->replaceScene(std::make_unique<ResultScene>(m_match));
         }
     } else {
         // Next round
@@ -224,30 +249,31 @@ void MatchScene::draw() {
         bool isP1 = (m_phase == MatchPhase::PlayerAChoice);
         std::string pName = isP1 ? m_match->playerA()->name() : m_match->playerB()->name();
 
-        Rectangle promptCard = { 400, 480, 480, 80 };
+        Rectangle promptCard = UiLayout::centerCard(480.0f, 74.0f);
+        promptCard.y = 485.0f;
         Theme::drawCard(promptCard, 14.0f, true);
 
         std::string promptText = "Vez de " + pName + ": Faça sua jogada!";
         int tw = Theme::measureText(promptText, 22);
-        Theme::drawText(promptText, static_cast<int>(promptCard.x + (promptCard.width - tw) * 0.5f), static_cast<int>(promptCard.y + 28), 22, Theme::ACCENT_GOLD);
+        Theme::drawText(promptText, static_cast<int>(promptCard.x + (promptCard.width - tw) * 0.5f), static_cast<int>(promptCard.y + 24), 22, Theme::NeonPurple);
 
         for (auto& btn : m_moveButtons) {
             btn.draw();
         }
 
         // Preview idle hands on sides with floor shadows
-        DrawEllipse(380, 555, 65, 18, Color{0, 0, 0, 75});
-        DrawEllipse(900, 555, 65, 18, Color{0, 0, 0, 75});
+        DrawEllipse(250, 445, 60, 16, Theme::ShadowColor);
+        DrawEllipse(1030, 445, 60, 16, Theme::ShadowColor);
 
-        atlas.draw(0, m_match->playerA()->skinTone(), 0, false, Vector2{380.0f, 550.0f}, 5.0f, 0.0f, Color{255, 255, 255, 180});
-        atlas.draw(0, m_match->playerB()->skinTone(), 1, true, Vector2{900.0f, 550.0f}, 5.0f, 0.0f, Color{255, 255, 255, 180});
+        atlas.draw(0, m_match->playerA()->skinTone(), 0, false, Vector2{250.0f, 440.0f}, 4.2f, 0.0f, Color{255, 255, 255, 180});
+        atlas.draw(0, m_match->playerB()->skinTone(), 1, true, Vector2{1030.0f, 440.0f}, 4.2f, 0.0f, Color{255, 255, 255, 180});
     }
 
     // Animation Phase Hands and Effects
     if (m_phase == MatchPhase::RevealAnimation) {
         // Floor shadows under wrists
-        DrawEllipse(static_cast<int>(m_hand1Offset), 555, 65, 18, Color{0, 0, 0, 75});
-        DrawEllipse(static_cast<int>(m_hand2Offset), 555, 65, 18, Color{0, 0, 0, 75});
+        DrawEllipse(static_cast<int>(m_hand1Offset), 555, 65, 18, Theme::ShadowColor);
+        DrawEllipse(static_cast<int>(m_hand2Offset), 555, 65, 18, Theme::ShadowColor);
 
         // Determine pose to display: closed fist during swing, then chosen pose at 1.6s
         int poseA = 0;
@@ -272,8 +298,8 @@ void MatchScene::draw() {
         // Countdown text ("1... 2... 3..." / "JÔ... KÊN... PÔ!")
         if (!m_countdownText.empty()) {
             int cw = Theme::measureText(m_countdownText, 48);
-            Theme::drawText(m_countdownText, 640 - cw / 2 + 2, 220 + 2, 48, Color{0, 0, 0, 160});
-            Theme::drawText(m_countdownText, 640 - cw / 2, 220, 48, Theme::ACCENT_GOLD);
+            Theme::drawText(m_countdownText, 640 - cw / 2 + 2, 220 + 2, 48, Color{0, 0, 0, 180});
+            Theme::drawText(m_countdownText, 640 - cw / 2, 220, 48, Theme::NeonPurple);
         }
 
         // Sum text for Par ou Ímpar
@@ -281,14 +307,14 @@ void MatchScene::draw() {
             Rectangle sumCard = { 440, 200, 400, 64 };
             Theme::drawCard(sumCard, 14.0f, true);
             int sw = Theme::measureText(m_sumText, 24);
-            Theme::drawText(m_sumText, static_cast<int>(sumCard.x + (sumCard.width - sw) * 0.5f), static_cast<int>(sumCard.y + 20), 24, Theme::ACCENT_GOLD);
+            Theme::drawText(m_sumText, static_cast<int>(sumCard.x + (sumCard.width - sw) * 0.5f), static_cast<int>(sumCard.y + 20), 24, Theme::NeonPurple);
         }
 
         // Outcome Text Banner
         if (!m_outcomeText.empty() && m_outcomeAlpha > 0.01f) {
             Rectangle outCard = { 420, 560, 440, 70 };
-            Color cardColor = Theme::CARD_BG;
-            cardColor.a = static_cast<unsigned char>(200 * m_outcomeAlpha);
+            Color cardColor = Theme::CardSurface;
+            cardColor.a = static_cast<unsigned char>(220 * m_outcomeAlpha);
             Theme::drawCard(outCard, 16.0f, true, cardColor);
 
             Color textC = m_outcomeColor;

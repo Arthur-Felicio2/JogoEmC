@@ -24,6 +24,10 @@ void SceneManager::setScene(std::unique_ptr<Scene> scene) {
     m_fadeAlpha = 0.0f;
 }
 
+void SceneManager::replaceScene(std::unique_ptr<Scene> scene) {
+    setScene(std::move(scene));
+}
+
 void SceneManager::changeScene(std::unique_ptr<Scene> nextScene, float transitionDuration) {
     if (!nextScene) return;
 
@@ -79,7 +83,8 @@ void SceneManager::draw() {
     }
 
     if (m_fadeAlpha > 0.001f) {
-        Color fadeColor = Color{11, 61, 46, (unsigned char)(255.0f * m_fadeAlpha)};
+        // Modern Black/Violet fade color #0A0713
+        Color fadeColor = Color{10, 7, 19, static_cast<unsigned char>(255.0f * m_fadeAlpha)};
         DrawRectangle(0, 0, 1280, 720, fadeColor);
     }
 }

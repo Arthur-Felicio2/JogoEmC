@@ -29,6 +29,7 @@ public:
 
 private:
     void setupTurnUI();
+    void chooseMove(int moveIndex);
     void startReveal(int moveA, int moveB);
     void finishRound();
 

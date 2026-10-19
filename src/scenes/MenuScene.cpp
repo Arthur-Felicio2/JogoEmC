@@ -6,17 +6,18 @@
 #include "core/SceneManager.hpp"
 #include "core/Application.hpp"
 #include "ui/Theme.hpp"
+#include "ui/UiLayout.h"
 #include <cmath>
 
 namespace Starlight {
 
 MenuScene::MenuScene()
-    : m_btnOddEven("Par ou Ímpar", Rectangle{490, 205, 300, 50}, ButtonStyle::Primary),
-      m_btnRps("Jokenpô", Rectangle{490, 265, 300, 50}, ButtonStyle::Secondary),
-      m_btnFlappy("Starlight Bird (Flappy)", Rectangle{490, 325, 300, 50}, ButtonStyle::Secondary),
-      m_btnScores("Placar & Recordes", Rectangle{490, 385, 300, 50}, ButtonStyle::Secondary),
-      m_btnCredits("Créditos", Rectangle{490, 445, 300, 50}, ButtonStyle::Secondary),
-      m_btnExit("Sair do Jogo", Rectangle{490, 505, 300, 50}, ButtonStyle::Danger) {
+    : m_btnOddEven("1. PAR OU ÍMPAR", Rectangle{450, 195, 380, 56}, ButtonStyle::Primary),
+      m_btnRps("2. JOKENPÔ", Rectangle{450, 263, 380, 56}, ButtonStyle::Primary),
+      m_btnFlappy("3. STARLIGHT BIRD", Rectangle{450, 331, 380, 56}, ButtonStyle::Secondary),
+      m_btnScores("🏆 PLACAR & RECORDES", Rectangle{450, 399, 380, 50}, ButtonStyle::Secondary),
+      m_btnCredits("ℹ️ CRÉDITOS", Rectangle{450, 461, 380, 50}, ButtonStyle::Secondary),
+      m_btnExit("🚪 SAIR DO JOGO", Rectangle{450, 523, 380, 50}, ButtonStyle::Danger) {
 
     m_buttons = { &m_btnOddEven, &m_btnRps, &m_btnFlappy, &m_btnScores, &m_btnCredits, &m_btnExit };
     m_buttons[0]->setFocused(true);
@@ -70,6 +71,15 @@ void MenuScene::update(float dt) {
         m_buttons[m_focusedIndex]->setFocused(true);
     }
 
+    // Number keys directly select games
+    if (IsKeyPressed(KEY_ONE)) {
+        if (m_manager) m_manager->changeScene(std::make_unique<ModeScene>(GameType::OddEven));
+    } else if (IsKeyPressed(KEY_TWO)) {
+        if (m_manager) m_manager->changeScene(std::make_unique<ModeScene>(GameType::Rps));
+    } else if (IsKeyPressed(KEY_THREE)) {
+        if (m_manager) m_manager->changeScene(std::make_unique<NameEntryScene>(GameType::Flappy));
+    }
+
     for (auto* btn : m_buttons) {
         btn->update(dt);
     }
@@ -78,22 +88,40 @@ void MenuScene::update(float dt) {
 void MenuScene::draw() {
     Theme::drawBackgroundGradient();
 
-    // Central Glass Card for Menu
-    Rectangle card = { 430, 50, 420, 570 };
-    Theme::drawCard(card, 20.0f, true);
+    // Responsive Center Card (Blueprint 4.2)
+    Rectangle card = UiLayout::centerCard(480.0f, 620.0f);
+    card.y = 45.0f;
+    Theme::drawCard(card, 22.0f, true);
 
     // Header Emblem
-    Vector2 starPos = { 640, 95 };
-    DrawPoly(starPos, 5, 18.0f, m_animTimer * 25.0f, Theme::ACCENT_GOLD);
+    Vector2 starPos = { card.x + card.width * 0.5f, card.y + 36.0f };
+    DrawPoly(starPos, 5, 18.0f, m_animTimer * 25.0f, Theme::NeonPurple);
+    DrawPolyLinesEx(starPos, 5, 18.0f, m_animTimer * 25.0f, 2.0f, Theme::TextBright);
 
     // Title
     const char* title = "STARLIGHT GAMES";
     int titleW = Theme::measureText(title, 30);
-    Theme::drawText(title, static_cast<int>(640 - titleW * 0.5f), 122, 30, Theme::ACCENT_GOLD);
+    Theme::drawText(title, static_cast<int>(card.x + (card.width - titleW) * 0.5f), static_cast<int>(card.y + 64.0f), 30, Theme::TextBright);
 
-    const char* sub = "Selecione uma opção para jogar:";
+    const char* sub = "Par ou Ímpar  •  Jokenpô  •  Bird";
     int subW = Theme::measureText(sub, 17);
-    Theme::drawText(sub, static_cast<int>(640 - subW * 0.5f), 162, 17, Theme::TEXT_SECONDARY);
+    Theme::drawText(sub, static_cast<int>(card.x + (card.width - subW) * 0.5f), static_cast<int>(card.y + 104.0f), 17, Theme::NeonPurple);
+
+    const char* prompt = "Selecione uma opção para jogar:";
+    int promptW = Theme::measureText(prompt, 15);
+    Theme::drawText(prompt, static_cast<int>(card.x + (card.width - promptW) * 0.5f), static_cast<int>(card.y + 130.0f), 15, Theme::TextMuted);
+
+    // Reposition buttons responsively inside card
+    float startY = card.y + 158.0f;
+    float btnW = card.width * 0.86f;
+    float btnX = card.x + (card.width - btnW) * 0.5f;
+
+    m_btnOddEven.setBounds(Rectangle{btnX, startY, btnW, 54.0f});
+    m_btnRps.setBounds(Rectangle{btnX, startY + 62.0f, btnW, 54.0f});
+    m_btnFlappy.setBounds(Rectangle{btnX, startY + 124.0f, btnW, 54.0f});
+    m_btnScores.setBounds(Rectangle{btnX, startY + 186.0f, btnW, 48.0f});
+    m_btnCredits.setBounds(Rectangle{btnX, startY + 242.0f, btnW, 48.0f});
+    m_btnExit.setBounds(Rectangle{btnX, startY + 298.0f, btnW, 48.0f});
 
     // Draw all menu buttons
     for (auto* btn : m_buttons) {
@@ -104,19 +132,22 @@ void MenuScene::draw() {
 
     // Decorative waving hand on the left (Pose 5 = waving open hand, blue sleeve)
     float waveAngle = sinf(m_animTimer * 4.0f) * 14.0f;
-    Vector2 handPos = { 210, 560 + sinf(m_animTimer * 2.0f) * 8.0f };
-    DrawEllipse(static_cast<int>(handPos.x), 565, 60, 16, Color{0, 0, 0, 70});
+    Vector2 handPos = { 180, 570 + sinf(m_animTimer * 2.0f) * 8.0f };
+    DrawEllipse(static_cast<int>(handPos.x), 575, 60, 16, Theme::ShadowColor);
     atlas.draw(5, 1, 0, false, handPos, 4.5f, waveAngle, WHITE);
 
     // Decorative fist on the right (Pose 0 = fist, red sleeve)
-    Vector2 handRightPos = { 1070, 560 + cosf(m_animTimer * 2.0f) * 8.0f };
-    DrawEllipse(static_cast<int>(handRightPos.x), 565, 60, 16, Color{0, 0, 0, 70});
+    Vector2 handRightPos = { 1100, 570 + cosf(m_animTimer * 2.0f) * 8.0f };
+    DrawEllipse(static_cast<int>(handRightPos.x), 575, 60, 16, Theme::ShadowColor);
     atlas.draw(0, 2, 1, true, handRightPos, 4.5f, -waveAngle, WHITE);
 
-    // Footer
-    const char* foot = "Starlight Company © 2026 • Turma INI-1A";
-    int footW = Theme::measureText(foot, 15);
-    Theme::drawText(foot, static_cast<int>(640 - footW * 0.5f), 670, 15, Theme::TEXT_SECONDARY);
+    // Footer info
+    const char* footL = "v2.0 • Paleta Preto & Roxo";
+    Theme::drawText(footL, 40, 685, 15, Theme::TextMuted);
+
+    const char* footR = "Pressione [ENTER] / Clique";
+    int footRW = Theme::measureText(footR, 15);
+    Theme::drawText(footR, 1280 - 40 - footRW, 685, 15, Theme::TextMuted);
 }
 
 } // namespace Starlight

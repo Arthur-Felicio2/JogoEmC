@@ -18,6 +18,7 @@ public:
 
     void setScene(std::unique_ptr<Scene> scene);
     void changeScene(std::unique_ptr<Scene> nextScene, float transitionDuration = 0.3f);
+    void replaceScene(std::unique_ptr<Scene> scene);
 
     void update(float dt);
     void draw();
